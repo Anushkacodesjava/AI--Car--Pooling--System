@@ -110,4 +110,4 @@ src/
 
 ## 👩‍💻 Developed by
 
-Anushri Sharma — Mini Project, 2026
+Anushka Shrivastava — Mini Project, 2026
