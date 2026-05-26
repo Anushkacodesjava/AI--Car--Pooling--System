@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Notifications</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div>
+        <h1>Notifications <span id="unreadBadge"></span></h1>
+        <p>Platform alerts, ride updates and system messages.</p>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-gh btn-sm" onclick="markAllRead()"><i class="fa-solid fa-check-double"></i> Mark All Read</button>
+        <button class="btn btn-pri" onclick="openModal('sendMod')"><i class="fa-solid fa-plus"></i> Send</button>
+      </div>
+    </div>
+
+    <!-- FILTER + USER -->
+    <div class="card">
+      <div class="cb">
+        <div class="fg" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
+          <div class="fgr">
+            <label class="flb"><i class="fa-solid fa-user" style="color:var(--ind)"></i> View notifications for</label>
+            <select id="notifUid" class="fsel" onchange="loadNotifs()"><option value="">Loading users...</option></select>
+          </div>
+          <button class="btn btn-sec" onclick="loadAllNotifs()"><i class="fa-solid fa-globe"></i> All Users</button>
+        </div>
+        <div class="frow mt3">
+          <div class="fpill on" onclick="setNType(this,'')">All</div>
+          <div class="fpill" onclick="setNType(this,'SYSTEM')"><i class="fa-solid fa-gear"></i> System</div>
+          <div class="fpill" onclick="setNType(this,'RIDE_BOOKED')"><i class="fa-solid fa-car"></i> Rides</div>
+          <div class="fpill" onclick="setNType(this,'PAYMENT')"><i class="fa-solid fa-wallet"></i> Payments</div>
+          <div class="fpill" onclick="setNType(this,'ECO')"><i class="fa-solid fa-leaf"></i> Eco</div>
+          <div class="fpill" onclick="setNType(this,'SOS')" style="color:var(--rose)"><i class="fa-solid fa-triangle-exclamation"></i> SOS</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="notifList" style="display:flex;flex-direction:column;gap:7px">
+      <div class="card"><div class="cb"><div class="empty">
+        <div class="ei"><i class="fa-regular fa-bell"></i></div>
+        <h3>Select a user to view notifications</h3>
+      </div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SEND NOTIFICATION MODAL -->
+<div class="ov" id="sendMod">
+  <div class="modal" style="max-width:420px">
+    <div class="mh">
+      <h3><i class="fa-regular fa-bell" style="color:var(--ind)"></i> Send Notification</h3>
+      <button class="mcl" onclick="closeModal('sendMod')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">Target User *</label><select id="sn_uid" class="fsel"><option value="">Loading...</option></select></div>
+      <div class="fgr"><label class="flb">Type</label>
+        <select id="sn_type" class="fsel">
+          <option value="SYSTEM">System</option><option value="RIDE_BOOKED">Ride</option>
+          <option value="PAYMENT">Payment</option><option value="ECO">Eco</option><option value="RATING">Rating</option>
+        </select>
+      </div>
+      <div class="fgr" style="grid-column:1/-1"><label class="flb">Title *</label><input id="sn_title" class="fi" placeholder="Notification title"></div>
+      <div class="fgr" style="grid-column:1/-1"><label class="flb">Message *</label><textarea id="sn_msg" class="fta" placeholder="Your message..."></textarea></div>
+    </div>
+    <div style="padding:10px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);border-radius:var(--r2);margin-top:10px">
+      <label class="fc g2u">
+        <input type="checkbox" id="bc_toggle" style="width:14px;height:14px">
+        <span class="fs1">Broadcast to ALL users</span>
+      </label>
+    </div>
+    <div class="mf">
+      <button class="btn btn-gh" onclick="closeModal('sendMod')">Cancel</button>
+      <button class="btn btn-pri" onclick="sendNotif()"><i class="fa-solid fa-paper-plane"></i> Send</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('notifications.html');
+document.getElementById('tb').innerHTML = topbar('Notifications');
+
+const typeIcons = {SYSTEM:'fa-gear',RIDE_BOOKED:'fa-car',RIDE_CANCELLED:'fa-ban',
+  PAYMENT:'fa-wallet',RATING:'fa-star',ECO:'fa-seedling',SOS:'fa-triangle-exclamation'};
+
+let allNotifs=[], ntypeF='';
+
+function setNType(el,t){
+  ntypeF=t;
+  document.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  renderNotifs();
+}
+
+function renderNotifs(){
+  const f = ntypeF ? allNotifs.filter(n=>n.type===ntypeF) : allNotifs;
+  const list = document.getElementById('notifList');
+  if(!f.length){
+    list.innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei"><i class="fa-regular fa-bell-slash"></i></div><h3>No notifications</h3><p>Nothing to show for this filter</p></div></div></div>`;
+    return;
+  }
+  list.innerHTML = f.map(n=>`
+    <div class="notif-item ${!n.isRead?'unread':''}" onclick="readOne(${n.id},this)">
+      <div class="notif-icon ni-${n.type||'SYSTEM'}">
+        <i class="fa-solid ${typeIcons[n.type]||'fa-bell'}"></i>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="fb mb2">
+          <span style="font-size:0.83rem;font-weight:600">${n.title||'Notification'}</span>
+          <div class="fc g1">
+            <span class="badge b-i" style="font-size:0.58rem">${n.type||'SYSTEM'}</span>
+            ${!n.isRead?'<div style="width:6px;height:6px;border-radius:50%;background:var(--ind);flex-shrink:0"></div>':''}
+          </div>
+        </div>
+        <div style="font-size:0.8rem;color:var(--t2)">${n.message||''}</div>
+        <div class="fc g2u mt2" style="font-size:0.68rem;color:var(--t3)">
+          <span><i class="fa-solid fa-user" style="margin-right:3px"></i>${n.user?.name||'—'}</span>
+          <span><i class="fa-regular fa-clock" style="margin-right:3px"></i>${n.createdAt?new Date(n.createdAt).toLocaleString('en-IN'):''}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function readOne(id, el){
+  apiFetch('/notification/'+id+'/read',{method:'PUT'}).catch(()=>{});
+  el.classList.remove('unread');
+  const dot = el.querySelector('[style*="border-radius:50%"]');
+  if(dot) dot.remove();
+  const i = allNotifs.findIndex(n=>n.id===id);
+  if(i>-1) allNotifs[i].isRead=true;
+}
+
+function markAllRead(){
+  const uid = document.getElementById('notifUid').value;
+  if(!uid){ toast('Select a user first','err'); return; }
+  apiFetch('/notification/readAll/'+uid,{method:'PUT'})
+    .then(()=>{ toast('All marked read'); allNotifs.forEach(n=>n.isRead=true); renderNotifs(); });
+}
+
+async function loadNotifs(){
+  const uid = document.getElementById('notifUid').value;
+  if(!uid) return;
+  allNotifs = await pubFetch('/notification/user/'+uid).catch(()=>[]);
+  if(!allNotifs.length){
+    const sel = document.getElementById('notifUid');
+    const uName = sel.options[sel.selectedIndex]?.text?.split('·')[1]?.trim()?.split('(')[0]?.trim()||'User';
+    allNotifs = [
+      {id:null,type:'SYSTEM',      title:'Welcome to PoolAI! 🎉',        message:`Hi ${uName}! Your account is active. Start by finding a ride or offering one.`,                                     isRead:false,createdAt:new Date().toISOString(),                   user:{name:uName}},
+      {id:null,type:'ECO',         title:'Go Green with Carpooling 🌿',   message:'Every shared ride saves ~2.1 kg of CO₂. Track your total eco impact on the Eco Impact page.',                    isRead:false,createdAt:new Date(Date.now()-3600000).toISOString(),  user:{name:uName}},
+      {id:null,type:'RIDE_BOOKED', title:'How to book a ride',            message:'Go to Find a Ride → enter pickup & drop → Search. AI scores each match. Hit Book Now to confirm your seat!',     isRead:true, createdAt:new Date(Date.now()-86400000).toISOString(), user:{name:uName}},
+      {id:null,type:'SYSTEM',      title:'Complete your profile',         message:'Add your home location and vehicle details so riders and drivers can match with you more accurately.',             isRead:true, createdAt:new Date(Date.now()-172800000).toISOString(),user:{name:uName}},
+      {id:null,type:'PAYMENT',     title:'How payments work 💳',          message:'After a ride is completed, go to My Bookings → Pay to settle the fare with your driver.',                         isRead:true, createdAt:new Date(Date.now()-259200000).toISOString(),user:{name:uName}},
+    ];
+  }
+  const unread = allNotifs.filter(n=>!n.isRead).length;
+  document.getElementById('unreadBadge').innerHTML = unread
+    ? `<span class="badge b-x" style="font-size:0.75rem;vertical-align:middle">${unread} unread</span>` : '';
+  renderNotifs();
+}
+
+async function loadAllNotifs(){
+  document.getElementById('notifUid').value='';
+  allNotifs = await pubFetch('/notification/all').catch(()=>[]);
+  renderNotifs();
+}
+
+function sendNotif(){
+  const uid=document.getElementById('sn_uid').value;
+  const title=document.getElementById('sn_title').value.trim();
+  const msg=document.getElementById('sn_msg').value.trim();
+  const type=document.getElementById('sn_type').value;
+  const bc=document.getElementById('bc_toggle').checked;
+  if(!title||!msg){ toast('Title and message required','err'); return; }
+  if(bc){
+    apiFetch(`/notification/broadcast?title=${encodeURIComponent(title)}&message=${encodeURIComponent(msg)}&type=${type}`,{method:'POST'})
+      .then(()=>{ toast('Broadcast sent to all users!'); closeModal('sendMod'); loadAllNotifs(); });
+  } else {
+    if(!uid){ toast('Select a target user','err'); return; }
+    apiFetch(`/notification/send?userId=${uid}&title=${encodeURIComponent(title)}&message=${encodeURIComponent(msg)}&type=${type}`,{method:'POST'})
+      .then(()=>{ toast('Notification sent!'); closeModal('sendMod'); loadNotifs(); });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await populateUserSelect('notifUid','— All users —','');
+  await populateUserSelect('sn_uid','— Select user —','');
+  // Auto-load for current user
+  const me = getUser();
+  if(me && me.id){
+    setTimeout(()=>{
+      const sel = document.getElementById('notifUid');
+      if(sel){ sel.value=me.id; sel.dispatchEvent(new Event('change')); loadNotifs(); }
+    }, 1000);
+  } else {
+    loadAllNotifs();
+  }
+});
+</script>
+</body>
+</html>

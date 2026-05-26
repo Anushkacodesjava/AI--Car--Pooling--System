@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Find a Ride</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>Find a Ride 🔍</h1><p>AI-powered matching finds the best rides for your route, time and preferences.</p></div>
+    </div>
+
+    <!-- SEARCH CARD -->
+    <div class="card" style="background:linear-gradient(135deg,rgba(99,102,241,0.07),rgba(129,140,248,0.04));border-color:rgba(99,102,241,0.22)">
+      <div class="cb">
+        <div class="fg" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:11px">
+          <div class="fgr">
+            <label class="flb"><i class="fa-solid fa-location-dot" style="color:var(--ind)"></i> From</label>
+            <input id="src" class="fi" placeholder="e.g. Koramangala, Bangalore" oninput="debSearch()">
+          </div>
+          <div class="fgr">
+            <label class="flb"><i class="fa-solid fa-flag-checkered" style="color:var(--em)"></i> To</label>
+            <input id="dst" class="fi" placeholder="e.g. Whitefield, Bangalore" oninput="debSearch()">
+          </div>
+          <div class="fgr">
+            <label class="flb"><i class="fa-regular fa-calendar"></i> Date</label>
+            <input id="rDate" class="fi" type="date">
+          </div>
+          <div class="fgr">
+            <label class="flb"><i class="fa-regular fa-clock"></i> Time</label>
+            <input id="rTime" class="fi" type="time">
+          </div>
+        </div>
+
+        <!-- FILTER ROW -->
+        <div style="margin-top:13px;padding-top:13px;border-top:1px solid var(--b0)">
+          <div class="fc g2u mb2"><i class="fa-solid fa-sliders fs0 cm"></i><span class="fs0 cm fw7">Filters</span></div>
+          <div class="fc g2u" style="flex-wrap:wrap">
+            <div class="fpill" id="fp-ac" onclick="toggleF(this,'ac')"><i class="fa-solid fa-wind" style="color:var(--sky)"></i> AC Only</div>
+            <div class="fpill" id="fp-ladies" onclick="toggleF(this,'ladies')"><i class="fa-solid fa-venus" style="color:var(--rose)"></i> Ladies Only</div>
+            <div class="fpill on" id="fp-all" onclick="clearVtype()">All Vehicles</div>
+            <div class="fpill" id="fp-s" onclick="setVtype(this,'Sedan')">Sedan</div>
+            <div class="fpill" id="fp-u" onclick="setVtype(this,'SUV')">SUV</div>
+            <div class="fpill" id="fp-h" onclick="setVtype(this,'Hatchback')">Hatchback</div>
+            <div class="fpill" id="fp-e" onclick="setVtype(this,'EV')">⚡ EV</div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:7px">
+              <label class="fs0 cm">Max ₹/seat</label>
+              <input id="maxP" class="fi" type="number" placeholder="Any" style="width:75px;padding:5px 8px">
+            </div>
+          </div>
+        </div>
+
+        <div class="fc g2u mt3">
+          <button class="btn btn-pri" style="padding:9px 24px" onclick="doSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search Rides</button>
+          <button class="btn btn-gh btn-sm" onclick="clearSearch()"><i class="fa-solid fa-rotate-left"></i> Clear</button>
+          <span id="resCount" class="fs1 cm" style="margin-left:auto"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS + MAP -->
+    <div class="gsp">
+      <div id="results">
+        <div class="card"><div class="cb"><div class="empty">
+          <div class="ei" style="color:var(--ind)"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+          <h3>Search for rides above</h3>
+          <p>Enter your pickup and drop location to see AI-matched rides</p>
+        </div></div></div>
+      </div>
+
+      <div style="position:sticky;top:66px;height:fit-content">
+        <div class="card">
+          <div class="ch"><h3><i class="fa-solid fa-map"></i> Route Preview</h3><span id="distInfo" class="fs0 cm"></span></div>
+          <div class="cb" style="padding:10px"><div id="map"></div><div id="mapHint" style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--t3)">Select a ride to see its route</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('find.html');
+document.getElementById('tb').innerHTML=topbar('Find a Ride');
+
+let fAC=false,fLadies=false,fVtype='',debT;
+
+function toggleF(el,key){if(key==='ac'){fAC=!fAC;el.classList.toggle('on');}else{fLadies=!fLadies;el.classList.toggle('on');}}
+function setVtype(el,v){fVtype=fVtype===v?'':v;document.querySelectorAll('[id^="fp-s"],[id^="fp-u"],[id^="fp-h"],[id^="fp-e"],[id^="fp-all"]').forEach(x=>x.classList.remove('on'));if(fVtype)el.classList.add('on');else document.getElementById('fp-all').classList.add('on');}
+function clearVtype(){fVtype='';document.querySelectorAll('[id^="fp-s"],[id^="fp-u"],[id^="fp-h"],[id^="fp-e"]').forEach(x=>x.classList.remove('on'));document.getElementById('fp-all').classList.add('on');}
+function debSearch(){clearTimeout(debT);debT=setTimeout(()=>{const s=document.getElementById('src').value,d=document.getElementById('dst').value;if(s.length>2||d.length>2)doSearch(true);},650);}
+function clearSearch(){['src','dst','rDate','rTime','maxP'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});fAC=false;fLadies=false;fVtype='';document.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));document.getElementById('fp-all').classList.add('on');document.getElementById('results').innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei" style="color:var(--ind)"><i class="fa-solid fa-magnifying-glass-location"></i></div><h3>Search for rides</h3><p>Enter locations above</p></div></div></div>`;document.getElementById('resCount').textContent='';if(_map)_map.eachLayer(l=>{if(l instanceof L.Marker||l instanceof L.Polyline)_map.removeLayer(l);});}
+
+async function doSearch(silent=false){
+  const src=document.getElementById('src').value.trim();
+  const dst=document.getElementById('dst').value.trim();
+  const date=document.getElementById('rDate').value;
+  const time=document.getElementById('rTime').value;
+  const maxP=document.getElementById('maxP').value;
+  if(!src&&!dst){if(!silent)toast('Enter at least one location','err');return;}
+
+  if(!silent)document.getElementById('results').innerHTML=`<div class="card"><div class="cb" style="padding:40px;text-align:center"><div class="spin" style="margin:0 auto 12px"></div><div class="fs1 cm">AI engine scanning rides...</div></div></div>`;
+
+  let url=`${API}/ridematch/search?source=${encodeURIComponent(src)}&destination=${encodeURIComponent(dst)}`;
+  if(date)url+=`&date=${date}`;if(time)url+=`&time=${time}`;if(maxP)url+=`&maxPrice=${maxP}`;
+  if(fVtype)url+=`&vehicleType=${fVtype}`;if(fAC)url+=`&acOnly=true`;if(fLadies)url+=`&ladiesOnly=true`;
+
+  try{
+    const raw=await apiFetch(url.replace(API,'')).then(r=>r.json());
+    const data=raw.data??raw.then(j=>j.data??j);
+    document.getElementById('resCount').textContent=data.length+' ride'+(data.length!==1?'s':'')+' found';
+    if(!data.length){
+      document.getElementById('results').innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei"><i class="fa-solid fa-road"></i></div><h3>No rides found</h3><p>Try broader search terms, different date, or remove filters</p><a href="offer.html" class="btn btn-pri btn-sm mt3">+ Offer this route</a></div></div></div>`;
+      return;
+    }
+    document.getElementById('results').innerHTML=data.map(r=>rideCard(r,true,true)).join('');
+    if(data[0]){
+      const dist=await plotRoute(data[0].sourceLocation,data[0].destinationLocation);
+      if(dist){document.getElementById('distInfo').textContent='~'+dist+' km';document.getElementById('mapHint').textContent='Showing top match route';}
+    }
+  }catch(e){
+    document.getElementById('results').innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei" style="color:var(--rose)"><i class="fa-solid fa-triangle-exclamation"></i></div><h3>Connection Error</h3><p>Cannot reach backend on port 8081.<br>Ensure Spring Boot is running.</p></div></div></div>`;
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>initMap());
+</script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Login</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; overflow-y:auto; }
+
+/* hero side */
+.login-shell { display:grid; grid-template-columns:1fr 420px; width:100%; max-width:960px; min-height:560px; background:var(--s1); border:1px solid var(--b0); border-radius:24px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.6); animation:slideup 0.45s cubic-bezier(0.4,0,0.2,1); z-index:1; }
+@media(max-width:720px){ .login-shell{grid-template-columns:1fr;} .hero-panel{display:none;} }
+
+/* left decorative panel */
+.hero-panel {
+  position:relative; overflow:hidden;
+  background:linear-gradient(145deg,#0e0e16 0%,#141428 100%);
+  display:flex; flex-direction:column; justify-content:flex-end; padding:40px;
+}
+.hero-panel::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%, rgba(99,102,241,0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 50% at 75% 80%, rgba(52,211,153,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 60% 40%, rgba(56,189,248,0.08) 0%, transparent 55%);
+}
+.hero-panel::after {
+  content:''; position:absolute; inset:0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+/* floating orbit rings */
+.orb { position:absolute; border-radius:50%; border:1px solid; animation:orb-spin linear infinite; }
+.orb1 { width:340px; height:340px; top:-80px; left:-100px; border-color:rgba(99,102,241,0.14); animation-duration:38s; }
+.orb2 { width:200px; height:200px; top:60px; right:-30px; border-color:rgba(52,211,153,0.12); animation-duration:22s; animation-direction:reverse; }
+.orb3 { width:480px; height:480px; bottom:-180px; left:-120px; border-color:rgba(129,140,248,0.07); animation-duration:55s; }
+@keyframes orb-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* floating metric cards */
+.float-cards { position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+.fc-chip {
+  position:absolute; background:rgba(20,20,28,0.8); backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.1); border-radius:12px;
+  padding:10px 14px; display:flex; align-items:center; gap:9px;
+  animation:float-in 0.6s cubic-bezier(0.4,0,0.2,1) backwards, float-bob ease-in-out infinite;
+}
+.fc-chip .ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.82rem; flex-shrink:0; }
+.fc-chip .val { font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:700; line-height:1; }
+.fc-chip .lbl { font-size:0.65rem; color:var(--t2); margin-top:2px; }
+.fcc1 { top:14%; left:8%; animation-delay:0.1s,0s; animation-duration:0.6s,4.8s; }
+.fcc2 { top:38%; right:5%; animation-delay:0.25s,0s; animation-duration:0.6s,5.5s; }
+.fcc3 { top:62%; left:12%; animation-delay:0.4s,0s; animation-duration:0.6s,4.2s; }
+@keyframes float-in { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes float-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+/* hero text */
+.hero-text { position:relative; z-index:2; }
+.hero-logo { display:flex; align-items:center; gap:10px; margin-bottom:32px; }
+.hero-logo .lm {
+  width:40px; height:40px; border-radius:11px;
+  background:linear-gradient(135deg,var(--ind2),var(--ind3));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; color:#fff;
+  box-shadow:0 0 0 1px rgba(99,102,241,0.4), 0 6px 20px rgba(79,70,229,0.5), 0 0 30px rgba(99,102,241,0.25);
+  position:relative; overflow:hidden;
+}
+.hero-logo .lm::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.2),transparent 55%); }
+.hero-logo .brand { font-family:'Syne',sans-serif; font-size:1.35rem; font-weight:800; letter-spacing:-0.5px; }
+.hero-h1 { font-family:'Syne',sans-serif; font-size:1.85rem; font-weight:800; line-height:1.18; letter-spacing:-0.8px; margin-bottom:12px; }
+.hero-h1 span { background:linear-gradient(135deg,var(--ind),var(--sky)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero-sub { font-size:0.84rem; color:var(--t2); line-height:1.6; max-width:300px; }
+.hero-tags { display:flex; flex-wrap:wrap; gap:7px; margin-top:20px; }
+.htag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.69rem; font-weight:600; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); color:var(--t2); }
+.htag i { font-size:0.65rem; }
+
+/* right form panel */
+.form-panel { padding:36px 32px; display:flex; flex-direction:column; justify-content:center; background:var(--s1); border-left:1px solid var(--b0); }
+
+.fp-header { margin-bottom:24px; }
+.fp-header h2 { font-family:'Syne',sans-serif; font-size:1.35rem; font-weight:700; letter-spacing:-0.4px; }
+.fp-header p { font-size:0.79rem; color:var(--t2); margin-top:4px; }
+
+.tab-row { display:flex; background:var(--s2); border-radius:10px; padding:3px; margin-bottom:22px; gap:3px; }
+.tb { flex:1; padding:7px; font-size:0.8rem; font-weight:600; border:none; background:none; cursor:pointer; color:var(--t2); border-radius:7px; transition:var(--tr); font-family:inherit; }
+.tb.on { background:var(--s4); color:var(--t1); box-shadow:0 2px 6px rgba(0,0,0,0.3); }
+
+.ebox { background:rgba(251,113,133,0.07); border:1px solid rgba(251,113,133,0.22); border-radius:var(--r2); padding:8px 12px; margin-bottom:12px; font-size:0.78rem; color:var(--rose); display:none; align-items:center; gap:7px; }
+.ebox.show { display:flex; }
+.sbox { background:rgba(52,211,153,0.07); border:1px solid rgba(52,211,153,0.22); border-radius:var(--r2); padding:8px 12px; margin-bottom:12px; font-size:0.78rem; color:var(--em); display:none; align-items:center; gap:7px; }
+.sbox.show { display:flex; }
+
+.pw-wrap { position:relative; }
+.pwtg { position:absolute; right:9px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--t3); cursor:pointer; padding:3px; font-size:0.82rem; transition:color 0.15s; }
+.pwtg:hover { color:var(--t1); }
+
+.div-or { display:flex; align-items:center; gap:9px; margin:14px 0; color:var(--t3); font-size:0.71rem; }
+.div-or::before,.div-or::after { content:''; flex:1; height:1px; background:var(--b0); }
+
+.admin-btn { width:100%; padding:8px; background:var(--s2); border:1px solid var(--b1); border-radius:var(--r2); color:var(--t2); font-size:0.78rem; font-weight:600; cursor:pointer; transition:var(--tr); font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; }
+.admin-btn:hover { border-color:var(--ind); color:var(--ind); background:rgba(99,102,241,0.06); }
+
+.req { font-size:0.63rem; color:var(--t3); margin-top:2px; }
+@keyframes ldspin { to{transform:rotate(360deg)} }
+.lds { display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:ldspin 0.7s linear infinite; margin-right:5px; }
+
+.foot-note { text-align:center; margin-top:16px; font-size:0.7rem; color:var(--t3); }
+.foot-note code { color:var(--ind); background:rgba(99,102,241,0.1); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="mesh"></div>
+
+<div class="login-shell">
+  <!-- LEFT: HERO PANEL -->
+  <div class="hero-panel">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+
+    <div class="float-cards">
+      <div class="fc-chip fcc1">
+        <div class="ic" style="background:rgba(52,211,153,0.14);color:var(--em)"><i class="fa-solid fa-leaf"></i></div>
+        <div><div class="val" style="color:var(--em)">2.4 kg</div><div class="lbl">CO₂ saved today</div></div>
+      </div>
+      <div class="fc-chip fcc2">
+        <div class="ic" style="background:rgba(99,102,241,0.14);color:var(--ind)"><i class="fa-solid fa-car-side"></i></div>
+        <div><div class="val">148</div><div class="lbl">Active rides</div></div>
+      </div>
+      <div class="fc-chip fcc3">
+        <div class="ic" style="background:rgba(251,191,36,0.14);color:var(--amb)"><i class="fa-solid fa-star"></i></div>
+        <div><div class="val" style="color:var(--amb)">4.8 ★</div><div class="lbl">Avg. rating</div></div>
+      </div>
+    </div>
+
+    <div class="hero-text">
+      <div class="hero-logo">
+        <div class="lm">P</div>
+        <div class="brand">PoolAI</div>
+      </div>
+      <div class="hero-h1">Smarter rides,<br><span>greener cities.</span></div>
+      <p class="hero-sub">AI-powered carpooling that matches you with the right ride, saves money, and reduces your carbon footprint.</p>
+      <div class="hero-tags">
+        <span class="htag"><i class="fa-solid fa-bolt" style="color:var(--amb)"></i> Instant Matching</span>
+        <span class="htag"><i class="fa-solid fa-lock" style="color:var(--sky)"></i> JWT Secured</span>
+        <span class="htag"><i class="fa-solid fa-seedling" style="color:var(--em)"></i> Eco Points</span>
+        <span class="htag"><i class="fa-solid fa-shield-halved" style="color:var(--ind)"></i> SOS Safety</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: FORM PANEL -->
+  <div class="form-panel">
+    <div class="fp-header">
+      <h2>Welcome back 👋</h2>
+      <p>Sign in to your PoolAI account</p>
+    </div>
+
+    <div class="tab-row">
+      <button class="tb on" id="tLogin" onclick="showTab('login')">Login</button>
+      <button class="tb" id="tReg" onclick="showTab('register')">Register</button>
+    </div>
+
+    <div id="errBox" class="ebox"><i class="fa-solid fa-circle-exclamation"></i><span id="errMsg"></span></div>
+    <div id="sucBox" class="sbox"><i class="fa-solid fa-circle-check"></i><span id="sucMsg"></span></div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <div class="fgr mb3">
+        <label class="flb"><i class="fa-regular fa-envelope" style="color:var(--ind)"></i> Email</label>
+        <input id="l_email" class="fi" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="fgr" style="margin-bottom:18px">
+        <label class="flb"><i class="fa-solid fa-lock" style="color:var(--ind)"></i> Password</label>
+        <div class="pw-wrap">
+          <input id="l_pw" class="fi" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="pwtg" onclick="togglePw('l_pw',this)" type="button"><i class="fa-regular fa-eye"></i></button>
+        </div>
+        <div class="req">💡 Users registered via old system can login with any password</div>
+      </div>
+      <button class="btn btn-pri w-full" style="padding:10px" onclick="doLogin()" id="loginBtn">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Login to PoolAI
+      </button>
+      <div class="div-or">or</div>
+      <button class="admin-btn" onclick="quickAdmin()">
+        <i class="fa-solid fa-shield-halved"></i> Quick Login as Admin
+      </button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerForm" style="display:none">
+      <div class="fg" style="gap:9px">
+        <div class="fgr"><label class="flb">Full Name *</label><input id="r_name" class="fi" placeholder="Anushri Sharma"></div>
+        <div class="fgr"><label class="flb">Email *</label><input id="r_email" class="fi" type="email" placeholder="your@email.com"></div>
+        <div class="fgr">
+          <label class="flb">Password * <span class="req">min 6 chars</span></label>
+          <div class="pw-wrap">
+            <input id="r_pw" class="fi" type="password" placeholder="Create password">
+            <button class="pwtg" onclick="togglePw('r_pw',this)" type="button"><i class="fa-regular fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="fgr"><label class="flb">Role *</label>
+          <select id="r_role" class="fsel">
+            <option value="">Select your role...</option>
+            <option value="DRIVER">🚗 Driver — I offer rides</option>
+            <option value="RIDER">🎫 Rider — I join rides</option>
+            <option value="BOTH">🔄 Both — I do both</option>
+          </select>
+        </div>
+        <div class="fgr"><label class="flb">Phone</label><input id="r_phone" class="fi" placeholder="+91 9XXXXXXXXX"></div>
+        <div class="fgr"><label class="flb">Gender</label>
+          <select id="r_gender" class="fsel"><option value="">—</option><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="fgr" style="grid-column:1/-1"><label class="flb">Home Location</label><input id="r_home" class="fi" placeholder="e.g. Koramangala, Bangalore"></div>
+        <div class="fgr" style="grid-column:1/-1"><label class="flb">Office / Destination</label><input id="r_office" class="fi" placeholder="e.g. Whitefield, Bangalore"></div>
+      </div>
+      <button class="btn btn-em w-full" style="padding:10px;margin-top:14px" onclick="doRegister()" id="regBtn">
+        <i class="fa-solid fa-user-plus"></i> Create Account
+      </button>
+    </div>
+
+    <div class="foot-note">
+      🔒 Secured with JWT + BCrypt &nbsp;·&nbsp; Admin: <code>admin@poolai.com</code> / <code>admin123</code>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8081';
+
+function showTab(t){
+  document.getElementById('loginForm').style.display = t==='login'?'block':'none';
+  document.getElementById('registerForm').style.display = t==='register'?'block':'none';
+  document.getElementById('tLogin').classList.toggle('on', t==='login');
+  document.getElementById('tReg').classList.toggle('on', t==='register');
+  document.querySelector('.fp-header h2').textContent = t==='login' ? 'Welcome back 👋' : 'Join PoolAI 🌿';
+  document.querySelector('.fp-header p').textContent = t==='login' ? 'Sign in to your PoolAI account' : 'Create your account in seconds';
+  hideMsg();
+}
+function showErr(m){ const b=document.getElementById('errBox');b.className='ebox show';document.getElementById('errMsg').textContent=m;document.getElementById('sucBox').className='sbox'; }
+function showSuc(m){ const b=document.getElementById('sucBox');b.className='sbox show';document.getElementById('sucMsg').textContent=m;document.getElementById('errBox').className='ebox'; }
+function hideMsg(){ document.getElementById('errBox').className='ebox';document.getElementById('sucBox').className='sbox'; }
+
+function togglePw(id,btn){
+  const inp=document.getElementById(id);
+  const isText=inp.type==='text';
+  inp.type=isText?'password':'text';
+  btn.innerHTML=isText?'<i class="fa-regular fa-eye"></i>':'<i class="fa-regular fa-eye-slash"></i>';
+}
+function setLoad(id, loading, label){
+  const btn=document.getElementById(id);
+  btn.disabled=loading;
+  btn.innerHTML=loading?`<span class="lds"></span> Loading...`:label;
+}
+function saveSession(auth){
+  localStorage.setItem('poolai_token', auth.token);
+  localStorage.setItem('poolai_user', JSON.stringify({id:auth.userId,name:auth.name,email:auth.email,role:auth.role}));
+}
+
+async function doLogin(){
+  const email=document.getElementById('l_email').value.trim();
+  const pw=document.getElementById('l_pw').value;
+  if(!email||!pw){ showErr('Please enter your email and password.'); return; }
+  setLoad('loginBtn', true, '');
+  try{
+    const res = await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+    const data = await res.json();
+    if(!res.ok || !data.success){ showErr(data.message || 'Login failed. Check your credentials.'); setLoad('loginBtn', false, '<i class="fa-solid fa-arrow-right-to-bracket"></i> Login to PoolAI'); return; }
+    saveSession(data.data);
+    showSuc('Welcome back, '+data.data.name+'! Your ID is #'+data.data.userId+'. Redirecting...');
+    setTimeout(()=>window.location.href='index.html', 1400);
+  }catch(e){
+    showErr('Cannot reach server. Is Spring Boot running on port 8081?');
+    setLoad('loginBtn', false, '<i class="fa-solid fa-arrow-right-to-bracket"></i> Login to PoolAI');
+  }
+}
+
+async function quickAdmin(){
+  document.getElementById('l_email').value='admin@poolai.com';
+  document.getElementById('l_pw').value='admin123';
+  await doLogin();
+}
+
+async function doRegister(){
+  const name=document.getElementById('r_name').value.trim();
+  const email=document.getElementById('r_email').value.trim();
+  const pw=document.getElementById('r_pw').value;
+  const role=document.getElementById('r_role').value;
+  if(!name||!email||!pw||!role){ showErr('Name, email, password and role are required.'); return; }
+  if(pw.length<6){ showErr('Password must be at least 6 characters.'); return; }
+  setLoad('regBtn', true, '');
+  try{
+    const res = await fetch(API+'/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pw,role,phone:document.getElementById('r_phone').value,gender:document.getElementById('r_gender').value,homeLocation:document.getElementById('r_home').value,officeLocation:document.getElementById('r_office').value})});
+    const data = await res.json();
+    if(!res.ok || !data.success){ showErr(data.message || 'Registration failed.'); setLoad('regBtn', false, '<i class="fa-solid fa-user-plus"></i> Create Account'); return; }
+    saveSession(data.data);
+    showSuc('✅ Account created! Your User ID is #'+data.data.userId+' — remember this. Redirecting...');
+    setTimeout(()=>window.location.href='index.html', 2000);
+  }catch(e){
+    showErr('Cannot reach server. Is Spring Boot running on port 8081?');
+    setLoad('regBtn', false, '<i class="fa-solid fa-user-plus"></i> Create Account');
+  }
+}
+
+if(localStorage.getItem('poolai_token')) window.location.href='index.html';
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Dashboard</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.stat-num { transition: all 0.4s; }
+.welcome-banner {
+  background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(52,211,153,0.06) 100%);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: var(--r3); padding: 18px 22px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  position: relative; overflow: hidden;
+}
+.welcome-banner::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.025), transparent 60%);
+  pointer-events: none;
+}
+.wb-glow { position: absolute; width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%);
+  right: -40px; top: -60px; pointer-events: none; }
+.quick-links { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner">
+      <div class="wb-glow"></div>
+      <div>
+        <h1 id="greeting" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:-0.5px">Good morning 👋</h1>
+        <p id="dateStr" style="color:var(--t2);font-size:0.82rem;margin-top:4px"></p>
+        <p id="userWelcome" style="color:var(--t3);font-size:0.76rem;margin-top:2px"></p>
+      </div>
+      <div class="quick-links">
+        <a href="find.html"  class="btn btn-pri"><i class="fa-solid fa-magnifying-glass-location"></i> Find Ride</a>
+        <a href="offer.html" class="btn btn-sec"><i class="fa-solid fa-car"></i> Offer Ride</a>
+        <a href="impact.html" class="btn btn-em btn-sm"><i class="fa-solid fa-leaf"></i> Eco Impact</a>
+      </div>
+    </div>
+
+    <!-- STAT CHIPS -->
+    <div class="sg" id="dashStats" style="grid-template-columns:repeat(6,1fr)">
+      <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">Users</div></div>
+      <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">Rides</div></div>
+      <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">Revenue</div></div>
+      <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">CO₂ Saved</div></div>
+      <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">Bookings</div></div>
+      <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">Vehicles</div></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-chart-line"></i> Rides This Week</h3><span class="badge b-cf pls">Live</span></div>
+        <div class="cb" style="padding-top:8px"><canvas id="rChart" height="130"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-chart-pie"></i> Status Breakdown</h3></div>
+        <div class="cb" style="display:flex;align-items:center;gap:12px;padding-top:6px;overflow:hidden">
+          <canvas id="sChart" height="120" style="max-width:120px;flex-shrink:0"></canvas>
+          <div id="sLegend" style="flex:1;min-width:0"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM -->
+    <div class="gsp">
+      <div class="card">
+        <div class="ch">
+          <h3><i class="fa-solid fa-route"></i> Recent Rides</h3>
+          <a href="rides.html" class="btn btn-gh btn-sm">View All <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div id="recentRides" class="cb" style="padding-top:6px"><div class="spin mt3"></div></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <div class="ch"><h3><i class="fa-solid fa-trophy"></i> Eco Heroes</h3><a href="impact.html" class="btn btn-gh btn-sm">Full Board</a></div>
+          <div class="cb" id="ecoBoard" style="padding-top:6px"><div class="spin mt3"></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3><i class="fa-solid fa-bolt"></i> Live Activity</h3><span class="badge b-cf pls">Live</span></div>
+          <div class="cb" style="padding-top:6px"><div class="tl" id="activity"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('index.html');
+document.getElementById('tb').innerHTML = topbar('Dashboard');
+
+const now = new Date();
+const h = now.getHours();
+document.getElementById('greeting').textContent =
+  (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ' 👋';
+document.getElementById('dateStr').textContent =
+  now.toLocaleDateString('en-IN', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const u = getUser();
+if (u) document.getElementById('userWelcome').textContent =
+  `Logged in as ${u.name}  ·  Role: ${u.role}  ·  ID: #${u.id}`;
+
+// Animated counter
+function animCount(el, target, prefix='', suffix='') {
+  const isNum = typeof target === 'number';
+  if (!isNum) { el.textContent = prefix + target + suffix; return; }
+  let start = 0, dur = 700, step = Math.ceil(target / 30);
+  const tick = () => {
+    start = Math.min(start + step, target);
+    el.textContent = prefix + start.toLocaleString('en-IN') + suffix;
+    if (start < target) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+let rInst = null, sInst = null;
+
+async function loadDash() {
+  const [users, rides, pays, impact, parts, vehicles, rStats] = await Promise.allSettled([
+    pubFetch('/pool/all'),
+    pubFetch('/ride/all'),
+    pubFetch('/payment/summary'),
+    pubFetch('/impact/global'),
+    pubFetch('/participation/all'),
+    pubFetch('/vehicle/all'),
+    pubFetch('/ride/stats'),
+  ]);
+  const u2 = users.value||[], r = rides.value||[], p = pays.value||{},
+        i = impact.value||{}, pa = parts.value||[], v = vehicles.value||[];
+
+  const cfg = [
+    {ic:'fa-users',            c:'var(--ind)', bg:'rgba(99,102,241,0.12)', v: u2.length,                             l:'Users',     tr:'↑ Active'},
+    {ic:'fa-car-side',         c:'var(--em)',  bg:'rgba(52,211,153,0.12)', v: r.length,                              l:'Rides',     tr:'Total posted'},
+    {ic:'fa-rupee-sign',       c:'var(--amb)', bg:'rgba(251,191,36,0.12)', v: '₹'+(p.totalRevenue||0).toLocaleString('en-IN'), l:'Revenue', tr:'All time'},
+    {ic:'fa-leaf',             c:'var(--em)',  bg:'rgba(52,211,153,0.12)', v: (i.totalCarbon||0)+'kg',               l:'CO₂ Saved', tr:'🌱 Growing'},
+    {ic:'fa-handshake-simple', c:'var(--rose)',bg:'rgba(251,113,133,0.12)',v: pa.length,                              l:'Bookings',  tr:'Confirmed'},
+    {ic:'fa-car-rear',         c:'var(--sky)', bg:'rgba(56,189,248,0.12)', v: v.length,                              l:'Vehicles',  tr:'Registered'},
+  ];
+  document.getElementById('dashStats').innerHTML = cfg.map(c => `
+    <div class="sc">
+      <div class="sc-ic" style="background:${c.bg};color:${c.c}"><i class="fa-solid ${c.ic}"></i></div>
+      <div class="sc-v stat-num" data-val="${c.v}">${c.v}</div>
+      <div class="sc-l">${c.l}</div>
+      <div class="sc-tr nt">${c.tr}</div>
+    </div>`).join('');
+
+  // Ride chart
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const base = [4,7,5,9,11,14,Math.max(r.length,1)];
+  if (rInst) rInst.destroy();
+  rInst = new Chart(document.getElementById('rChart'), {
+    type:'line',
+    data:{labels:days, datasets:[{
+      label:'Rides', data:base,
+      borderColor:'#818cf8', backgroundColor:'rgba(99,102,241,0.07)',
+      fill:true, tension:0.45, borderWidth:2,
+      pointBackgroundColor:'#818cf8', pointRadius:3,
+      pointBorderColor:'#0f0f11', pointBorderWidth:2
+    }]},
+    options:{responsive:true, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#52525b',font:{size:10}}, grid:{display:false}},
+              y:{ticks:{color:'#52525b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}}}
+  });
+
+  // Status donut — from new /ride/stats endpoint
+  try {
+    const rs = await pubFetch('/ride/stats');
+    const labs = Object.keys(rs), vals = Object.values(rs);
+    const clrs = {PENDING:'#fb923c',ACCEPTED:'#38bdf8',ONGOING:'#818cf8',COMPLETED:'#34d399',CANCELLED:'#fb7185'};
+    if (sInst) sInst.destroy();
+    sInst = new Chart(document.getElementById('sChart'), {
+      type:'doughnut',
+      data:{labels:labs, datasets:[{data:vals,
+        backgroundColor:labs.map(l => clrs[l]||'#3f3f46'),
+        borderWidth:0, borderRadius:4}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, cutout:'70%'}
+    });
+    document.getElementById('sLegend').innerHTML = labs.map((l,i2) => `
+      <div class="fb g1" style="margin-bottom:6px">
+        <div class="fc g1">
+          <div style="width:7px;height:7px;border-radius:2px;background:${clrs[l]||'#3f3f46'}"></div>
+          <span style="font-size:0.69rem">${l}</span>
+        </div>
+        <span style="font-size:0.69rem;font-weight:700;color:${clrs[l]||'var(--t2)'}">${vals[i2]}</span>
+      </div>`).join('');
+  } catch(e) {}
+
+  // Recent rides
+  const recent = r.slice(-6).reverse();
+  document.getElementById('recentRides').innerHTML = recent.length ? recent.map(ride => `
+    <div class="fb" style="padding:7px 0;border-bottom:1px solid var(--b0);gap:8px">
+      <div style="flex:1;min-width:0">
+        <div class="fc g1 mb2">
+          <span style="font-family:monospace;font-size:0.67rem;color:var(--em)">#${ride.id}</span>
+          ${sbadge(ride.status)}
+        </div>
+        <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${ride.sourceLocation||'—'} → ${ride.destinationLocation||'—'}
+        </div>
+        <div style="font-size:0.68rem;color:var(--t3);margin-top:2px">
+          ${ride.rideDate||'—'} · ${fT(ride.rideTime)} · ${ride.user?.name||'—'}
+        </div>
+      </div>
+      ${ride.pricePerSeat ? `<div style="color:var(--em);font-weight:700;font-size:0.8rem;flex-shrink:0">${fM(ride.pricePerSeat)}/seat</div>` : ''}
+    </div>`).join('')
+    : `<div class="empty" style="padding:20px">
+         <div class="ei"><i class="fa-solid fa-route"></i></div>
+         <h3>No rides yet</h3><p><a href="offer.html" style="color:var(--ind)">Post the first ride →</a></p>
+       </div>`;
+
+  // Eco heroes
+  const sorted = [...u2].filter(x => x.ecoPoints > 0).sort((a,b) => (b.ecoPoints||0)-(a.ecoPoints||0)).slice(0,5);
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('ecoBoard').innerHTML = sorted.length ? sorted.map((usr, idx) => `
+    <div class="lbr">
+      <div class="lbrank ${idx<3?['gold','silver','bronze'][idx]:''}">${medals[idx]||idx+1}</div>
+      <div class="uca" style="width:22px;height:22px;font-size:0.52rem;background:${gradFor(idx)}">${ini(usr.name)}</div>
+      <div class="lbname">${usr.name} <span style="font-size:0.63rem;color:var(--ind)">#${usr.id}</span></div>
+      <div class="lbpts">+${usr.ecoPoints} 🌿</div>
+    </div>`).join('')
+    : `<div class="empty" style="padding:14px"><p class="cm" style="font-size:0.75rem">Calculate ride impacts to see eco heroes</p></div>`;
+
+  // Activity feed
+  const acts = [
+    ...r.slice(-3).reverse().map(x => ({ic:'fa-route',c:'var(--ind)',t:'Ride posted',s:`${x.sourceLocation||'?'} → ${x.destinationLocation||'?'}`})),
+    ...pa.slice(-2).reverse().map(() => ({ic:'fa-handshake-simple',c:'var(--em)',t:'Ride booked',s:'A passenger joined a ride'})),
+  ].slice(0,6);
+  document.getElementById('activity').innerHTML = acts.length ? acts.map(a => `
+    <div class="tli">
+      <div class="tldot" style="border-color:${a.c};color:${a.c}"><i class="fa-solid ${a.ic}" style="font-size:0.5rem"></i></div>
+      <div style="flex:1"><div class="tlt">${a.t}</div><div class="tls">${a.s}</div></div>
+    </div>`).join('')
+    : `<div class="empty" style="padding:14px"><p class="cm" style="font-size:0.75rem">No recent activity</p></div>`;
+}
+
+loadDash();
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — All Rides</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>All Rides</h1><p>Complete platform ride listing — manage status, view passengers.</p></div>
+      <div class="ph-actions">
+        <div class="tb-search" style="max-width:220px"><i class="fa-solid fa-magnifying-glass"></i><input id="rq" placeholder="Search location..." oninput="filterR()"></div>
+        <a href="offer.html" class="btn btn-pri"><i class="fa-solid fa-plus"></i> Post Ride</a>
+      </div>
+    </div>
+
+    <div class="frow">
+      <div class="fpill on" onclick="setSt(this,'')">All</div>
+      <div class="fpill" onclick="setSt(this,'PENDING')"><span style="color:var(--ora)">●</span> Pending</div>
+      <div class="fpill" onclick="setSt(this,'ACCEPTED')"><span style="color:var(--sky)">●</span> Accepted</div>
+      <div class="fpill" onclick="setSt(this,'ONGOING')"><span style="color:var(--ind)">●</span> Ongoing</div>
+      <div class="fpill" onclick="setSt(this,'COMPLETED')"><span style="color:var(--em)">●</span> Completed</div>
+      <div class="fpill" onclick="setSt(this,'CANCELLED')"><span style="color:var(--rose)">●</span> Cancelled</div>
+      <button class="btn btn-gh btn-xs" style="margin-left:auto" onclick="loadR()"><i class="fa-solid fa-arrows-rotate"></i></button>
+    </div>
+
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-route"></i> Ride Listings <span class="badge b-i" id="rcnt" style="margin-left:5px">—</span></h3></div>
+      <div class="tw-wrap">
+        <table class="tbl">
+          <thead><tr><th>Ride ID</th><th>Route</th><th>Driver</th><th>Date / Time</th><th>Seats</th><th>Price</th><th>Features</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="rTbody"><tr><td colspan="9" style="text-align:center;padding:40px"><div class="spin" style="margin:auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS MODAL -->
+<div class="ov" id="stMod">
+  <div class="modal" style="max-width:360px">
+    <div class="mh"><h3><i class="fa-solid fa-circle-dot" style="color:var(--ind)"></i> Update Ride Status</h3><button class="mcl" onclick="closeModal('stMod')"><i class="fa-solid fa-xmark"></i></button></div>
+    <input type="hidden" id="stRideId">
+    <div class="fgr mb3"><label class="flb">Ride ID</label><div style="padding:8px 11px;background:var(--s3);border-radius:var(--r2);font-weight:700;color:var(--ind)" id="stRideLabel">—</div></div>
+    <div class="fgr"><label class="flb">New Status</label>
+      <select id="newSt" class="fsel">
+        <option value="PENDING">🟡 Pending</option>
+        <option value="ACCEPTED">🔵 Accepted</option>
+        <option value="ONGOING">🟣 Ongoing</option>
+        <option value="COMPLETED">🟢 Completed</option>
+        <option value="CANCELLED">🔴 Cancelled</option>
+      </select>
+    </div>
+    <div class="mf"><button class="btn btn-gh" onclick="closeModal('stMod')">Cancel</button><button class="btn btn-pri" onclick="applyStatus()"><i class="fa-solid fa-check"></i> Update</button></div>
+  </div>
+</div>
+
+<!-- RIDE SUCCESS MODAL -->
+<div class="ov" id="rideSuccMod">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="width:60px;height:60px;border-radius:50%;background:rgba(52,211,153,0.15);border:2px solid var(--em);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5rem;color:var(--em)"><i class="fa-solid fa-car"></i></div>
+    <h3 style="font-size:1.1rem;margin-bottom:6px">Ride Posted! 🚗</h3>
+    <p class="cm fs1 mb3">Share this Ride ID with passengers so they can search and book your ride.</p>
+    <div style="background:var(--s3);border:2px dashed var(--em);border-radius:var(--r);padding:20px;margin:14px 0">
+      <div style="font-size:0.72rem;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Your Ride ID</div>
+      <div id="newRideId" style="font-size:2.6rem;font-weight:900;color:var(--em);font-family:'Space Grotesk',sans-serif">#—</div>
+      <div id="newRideRoute" style="font-size:0.88rem;color:var(--t2);margin-top:4px"></div>
+    </div>
+    <div class="mf" style="justify-content:center;margin-top:16px">
+      <a href="find.html" class="btn btn-gh">View in Search</a>
+      <button class="btn btn-em" onclick="closeModal('rideSuccMod')">Done!</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('rides.html');
+document.getElementById('tb').innerHTML=topbar('All Rides');
+
+let allR=[], stF='';
+function setSt(el,s){stF=s;document.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));el.classList.add('on');filterR();}
+function filterR(){
+  const q=document.getElementById('rq').value.toLowerCase();
+  let f=allR.filter(r=>(r.sourceLocation||'').toLowerCase().includes(q)||(r.destinationLocation||'').toLowerCase().includes(q));
+  if(stF)f=f.filter(r=>r.status===stF);
+  document.getElementById('rcnt').textContent=f.length;
+  renderT(f);
+}
+function renderT(rides){
+  const tb=document.getElementById('rTbody');
+  if(!rides.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="ei"><i class="fa-solid fa-road"></i></div><h3>No rides found</h3></div></td></tr>`;return;}
+  tb.innerHTML=rides.map(r=>`<tr>
+    <td><span style="background:var(--s3);border:1px solid var(--b1);padding:2px 8px;border-radius:6px;font-family:monospace;font-size:0.78rem;color:var(--em);font-weight:700">#${r.id}</span></td>
+    <td>
+      <div class="fw6 fs1">${r.sourceLocation||'—'} <i class="fa-solid fa-arrow-right" style="color:var(--t3);font-size:0.6rem"></i> ${r.destinationLocation||'—'}</div>
+      ${r.notes?`<div class="fs0 cm" style="font-style:italic;margin-top:2px">"${r.notes}"</div>`:''}
+    </td>
+    <td>
+      <div class="fc g2u">
+        <div class="uca" style="width:26px;height:26px;font-size:0.58rem;background:${gradFor(r.user?.id||0)}">${ini(r.user?.name||'Driver')}</div>
+        <div><div class="fs1 fw6">${r.user?.name||'—'}</div><div class="fs0 cm">#${r.user?.id||''}</div></div>
+      </div>
+    </td>
+    <td><div class="fs1">${r.rideDate||'—'}</div><div class="fs0 cm">${fT(r.rideTime)}</div></td>
+    <td><div class="fs1 fw6">${r.availableSeats??0}/${r.maxSeats??4}</div><div class="fs0 cm">available</div></td>
+    <td class="ce fw7">${r.pricePerSeat?fM(r.pricePerSeat):'Free'}</td>
+    <td>
+      <div class="fc g1" style="flex-wrap:wrap">
+        ${r.acAvailable?`<span class="chip" style="font-size:0.62rem;color:var(--sky)"><i class="fa-solid fa-wind"></i>AC</span>`:''}
+        ${r.ladiesOnly?`<span class="chip" style="font-size:0.62rem;color:var(--rose)"><i class="fa-solid fa-venus"></i>Ladies</span>`:''}
+        ${r.vehicleType?`<span class="chip" style="font-size:0.62rem">${r.vehicleType}</span>`:''}
+      </div>
+    </td>
+    <td>${sbadge(r.status)}</td>
+    <td>
+      <div class="fc g1">
+        <button class="btn btn-gh btn-ics" title="Change Status" onclick="openSt(${r.id},'${r.status}','${r.sourceLocation||''}→${r.destinationLocation||''}')"><i class="fa-solid fa-circle-dot" style="color:var(--ind)"></i></button>
+        <button class="btn btn-gh btn-ics" title="Delete" onclick="delR(${r.id})"><i class="fa-solid fa-trash" style="color:var(--rose)"></i></button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+function openSt(id,cur,route){
+  document.getElementById('stRideId').value=id;
+  document.getElementById('stRideLabel').textContent='#'+id+' · '+route;
+  document.getElementById('newSt').value=cur;
+  openModal('stMod');
+}
+function applyStatus(){
+  const id=document.getElementById('stRideId').value,s=document.getElementById('newSt').value;
+  apiFetch(`/ride/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:s})})
+    .then(r=>r.json()).then(j=>j.data??j).then(u=>{const i=allR.findIndex(r=>r.id==id);if(i>-1)allR[i]=u;closeModal('stMod');filterR();toast('Status updated to '+s);});
+}
+function delR(id){if(!confirm('Delete ride #'+id+'?'))return;apiFetch(`/ride/${id}`,{method:'DELETE'}).then(()=>{toast('Ride deleted','err');allR=allR.filter(r=>r.id!==id);filterR();});}
+
+async function loadR(){
+  document.getElementById('rTbody').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px"><div class="spin" style="margin:auto"></div></td></tr>`;
+  allR=await apiFetch('/ride/all').then(r=>r.json()).then(j=>j.data??j).catch(()=>[]);
+  filterR();
+}
+loadR();
+</script>
+</body>
+</html>

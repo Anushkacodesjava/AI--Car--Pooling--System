@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Vehicles</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>Vehicle Registry</h1><p>All registered vehicles on the platform.</p></div>
+      <div class="ph-actions">
+        <div class="tb-search" style="max-width:190px"><i class="fa-solid fa-magnifying-glass"></i><input id="vq" placeholder="Search..." oninput="filterV()"></div>
+        <button class="btn btn-pri" onclick="openModal('addVMod')"><i class="fa-solid fa-plus"></i> Register Vehicle</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+      <div class="sc"><div class="sc-ic" style="background:rgba(99,102,241,0.12);color:var(--ind)"><i class="fa-solid fa-car-rear"></i></div><div class="sc-v" id="vTot">—</div><div class="sc-l">Total</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(52,211,153,0.12);color:var(--em)"><i class="fa-solid fa-shield-check"></i></div><div class="sc-v" id="vVer">—</div><div class="sc-l">Verified</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(79,209,197,0.1);color:var(--sky)"><i class="fa-solid fa-charging-station"></i></div><div class="sc-v" id="vEV">—</div><div class="sc-l">EVs</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(56,189,248,0.1);color:var(--sky)"><i class="fa-solid fa-wind"></i></div><div class="sc-v" id="vAC">—</div><div class="sc-l">AC Enabled</div></div>
+    </div>
+
+    <!-- TYPE FILTER -->
+    <div class="frow">
+      <div class="fpill on" onclick="setVT(this,'')">All Types</div>
+      <div class="fpill" onclick="setVT(this,'Sedan')">Sedan</div>
+      <div class="fpill" onclick="setVT(this,'SUV')">SUV</div>
+      <div class="fpill" onclick="setVT(this,'Hatchback')">Hatchback</div>
+      <div class="fpill" onclick="setVT(this,'EV')">⚡ EV</div>
+      <div class="fpill" onclick="setVT(this,'Bike')">Bike</div>
+    </div>
+
+    <div id="vGrid"></div>
+  </div>
+</div>
+
+<!-- ADD VEHICLE MODAL -->
+<div class="ov" id="addVMod">
+  <div class="modal">
+    <div class="mh">
+      <h3><i class="fa-solid fa-car" style="color:var(--ind)"></i> Register Vehicle</h3>
+      <button class="mcl" onclick="closeModal('addVMod')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">Owner *</label><select id="v_uid" class="fsel"><option value="">Loading...</option></select></div>
+      <div class="fgr"><label class="flb">Vehicle Number *</label><input id="v_num" class="fi" placeholder="KA01AB1234" style="text-transform:uppercase"></div>
+      <div class="fgr"><label class="flb">Type *</label>
+        <select id="v_type" class="fsel"><option value="">Select...</option><option>Sedan</option><option>SUV</option><option>Hatchback</option><option>EV</option><option>Bike</option><option>Auto</option></select>
+      </div>
+      <div class="fgr"><label class="flb">Brand</label><input id="v_brand" class="fi" placeholder="e.g. Maruti, Hyundai"></div>
+      <div class="fgr"><label class="flb">Color</label><input id="v_color" class="fi" placeholder="e.g. Silver"></div>
+      <div class="fgr"><label class="flb">Total Seats *</label><input id="v_seats" class="fi" type="number" min="1" max="10" value="4"></div>
+    </div>
+    <div class="tw mt3">
+      <label class="tgl"><input type="checkbox" id="v_ac"><span class="tsl"></span></label>
+      <span class="tlb"><i class="fa-solid fa-wind" style="color:var(--sky)"></i> AC Available</span>
+    </div>
+    <div class="mf">
+      <button class="btn btn-gh" onclick="closeModal('addVMod')">Cancel</button>
+      <button class="btn btn-pri" onclick="addVehicle()"><i class="fa-solid fa-check"></i> Register</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('vehicles.html');
+document.getElementById('tb').innerHTML = topbar('Vehicles');
+
+const vTypeIcon = {Sedan:'fa-car',SUV:'fa-truck-monster',Hatchback:'fa-car-side',EV:'fa-charging-station',Bike:'fa-motorcycle',Auto:'fa-taxi'};
+const vTypeClr  = {Sedan:'var(--ind)',SUV:'var(--purple,#9f7aea)',Hatchback:'var(--sky)',EV:'var(--em)',Bike:'var(--ora)',Auto:'var(--amb)'};
+
+let allV=[], vtF='';
+
+function setVT(el,t){ vtF=t; document.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on')); el.classList.add('on'); filterV(); }
+function filterV(){
+  const q=document.getElementById('vq').value.toLowerCase();
+  let f=allV.filter(v=>(v.vehicleNumber||'').toLowerCase().includes(q)||(v.brand||'').toLowerCase().includes(q)||(v.vehicleType||'').toLowerCase().includes(q));
+  if(vtF) f=f.filter(v=>v.vehicleType===vtF);
+  renderV(f);
+}
+
+function renderV(vs){
+  const g=document.getElementById('vGrid');
+  if(!vs.length){
+    g.innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei"><i class="fa-solid fa-car-slash"></i></div><h3>No vehicles found</h3><p>Register a new vehicle above</p></div></div></div>`;
+    return;
+  }
+  g.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:11px">
+    ${vs.map(v=>{
+      const ic = vTypeIcon[v.vehicleType]||'fa-car';
+      const cl = vTypeClr[v.vehicleType]||'var(--ind)';
+      return `<div class="vc-card">
+        <div class="fb mb3">
+          <div class="fc g2u">
+            <div class="vc-icon" style="background:rgba(99,102,241,0.08);color:${cl}">
+              <i class="fa-solid ${ic}"></i>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:0.92rem;letter-spacing:1px">${v.vehicleNumber||'—'}</div>
+              <div style="font-size:0.72rem;color:var(--t2)">${v.brand||''} ${v.vehicleType||''} ${v.color?'· '+v.color:''}</div>
+            </div>
+          </div>
+          ${v.isVerified?'<span class="badge b-c"><i class="fa-solid fa-shield-check"></i> Verified</span>':'<span class="badge b-p">Unverified</span>'}
+        </div>
+        <div class="fc g2u mb3" style="flex-wrap:wrap">
+          <span class="chip"><i class="fa-solid fa-user-group"></i> ${v.seats} seats</span>
+          ${v.acAvailable?`<span class="chip" style="color:var(--sky);border-color:rgba(56,189,248,0.3)"><i class="fa-solid fa-wind"></i> AC</span>`:''}
+          <span class="chip"><i class="fa-solid fa-user"></i> ${v.owner?.name||'User #'+(v.owner?.id||'?')}</span>
+        </div>
+        <div class="fc g2u">
+          ${!v.isVerified?`<button class="btn btn-em btn-xs" onclick="verifyV(${v.id})"><i class="fa-solid fa-shield-check"></i> Verify</button>`:''}
+          <button class="btn btn-gh btn-xs" style="margin-left:auto;color:var(--rose)" onclick="delV(${v.id})"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function updateVStats(){
+  document.getElementById('vTot').textContent = allV.length;
+  document.getElementById('vVer').textContent = allV.filter(v=>v.isVerified).length;
+  document.getElementById('vEV').textContent  = allV.filter(v=>v.vehicleType==='EV').length;
+  document.getElementById('vAC').textContent  = allV.filter(v=>v.acAvailable).length;
+}
+
+function addVehicle(){
+  const num=document.getElementById('v_num').value.trim().toUpperCase();
+  const type=document.getElementById('v_type').value;
+  const seats=document.getElementById('v_seats').value;
+  const uid=document.getElementById('v_uid').value;
+  if(!num||!type||!seats||!uid){ toast('All required fields must be filled','err'); return; }
+  apiFetch('/vehicle/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    vehicleNumber:num, vehicleType:type,
+    brand:document.getElementById('v_brand').value,
+    color:document.getElementById('v_color').value,
+    seats:parseInt(seats), acAvailable:document.getElementById('v_ac').checked,
+    owner:{id:parseInt(uid)}
+  })}).then(r=>r.json()).then(j=>{
+    const v=j.data||j;
+    toast('Vehicle '+v.vehicleNumber+' registered!');
+    closeModal('addVMod');
+    allV.unshift(v); updateVStats(); filterV();
+  }).catch(()=>toast('Registration failed','err'));
+}
+
+function verifyV(id){
+  apiFetch('/vehicle/'+id+'/verify',{method:'PUT'}).then(r=>r.json()).then(j=>{
+    const v=j.data||j;
+    toast('Vehicle verified ✓');
+    const i=allV.findIndex(x=>x.id===id); if(i>-1) allV[i]=v;
+    updateVStats(); filterV();
+  });
+}
+function delV(id){
+  if(!confirm('Remove this vehicle?')) return;
+  apiFetch('/vehicle/'+id,{method:'DELETE'}).then(()=>{
+    toast('Vehicle removed','err');
+    allV=allV.filter(x=>x.id!==id); updateVStats(); filterV();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await populateUserSelect('v_uid','— Select owner —','');
+  allV = await pubFetch('/vehicle/all').catch(()=>[]);
+  updateVStats(); filterV();
+});
+</script>
+</body>
+</html>

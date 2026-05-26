@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Users</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+
+    <div class="ph">
+      <div><h1>User Management</h1><p>Register users, view profiles, manage roles.</p></div>
+      <div class="ph-actions">
+        <div class="tb-search" style="max-width:220px"><i class="fa-solid fa-magnifying-glass"></i><input id="uq" placeholder="Name, email..." oninput="filterU()"></div>
+        <button class="btn btn-pri" onclick="openModal('addUserMod')"><i class="fa-solid fa-user-plus"></i> Add User</button>
+      </div>
+    </div>
+
+    <!-- ROLE FILTER -->
+    <div class="frow">
+      <div class="fpill on" onclick="setRole(this,'')">All Users</div>
+      <div class="fpill" onclick="setRole(this,'DRIVER')"><i class="fa-solid fa-car"></i> Drivers</div>
+      <div class="fpill" onclick="setRole(this,'RIDER')"><i class="fa-solid fa-person-walking"></i> Riders</div>
+      <div class="fpill" onclick="setRole(this,'BOTH')"><i class="fa-solid fa-arrows-left-right"></i> Both</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+      <div class="sc"><div class="sc-ic" style="background:rgba(99,102,241,0.12);color:var(--ind)"><i class="fa-solid fa-users"></i></div><div class="sc-v" id="utot">—</div><div class="sc-l">Total Users</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(52,211,153,0.12);color:var(--em)"><i class="fa-solid fa-car"></i></div><div class="sc-v" id="udrvr">—</div><div class="sc-l">Drivers</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(129,140,248,0.12);color:var(--ind)"><i class="fa-solid fa-shield-check"></i></div><div class="sc-v" id="uveri">—</div><div class="sc-l">Verified</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(251,191,36,0.12);color:var(--amb)"><i class="fa-solid fa-star"></i></div><div class="sc-v" id="uavgr">—</div><div class="sc-l">Avg Rating</div></div>
+    </div>
+
+    <!-- USERS GRID -->
+    <div class="card">
+      <div class="ch">
+        <h3><i class="fa-solid fa-user-group"></i> Members <span class="badge b-i" id="ucnt" style="margin-left:5px">—</span></h3>
+        <div class="fc g2u">
+          <button class="btn btn-gh btn-xs" id="vGrid" onclick="setView('grid')" style="color:var(--ind)"><i class="fa-solid fa-grip"></i> Grid</button>
+          <button class="btn btn-gh btn-xs" id="vTable" onclick="setView('table')"><i class="fa-solid fa-list"></i> Table</button>
+        </div>
+      </div>
+      <div class="cb" id="usersCont"><div class="spin mt3"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="ov" id="addUserMod">
+  <div class="modal">
+    <div class="mh">
+      <h3><i class="fa-solid fa-user-plus" style="color:var(--ind)"></i> Register New User</h3>
+      <button class="mcl" onclick="closeModal('addUserMod')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">Full Name *</label><input id="un" class="fi" placeholder="e.g. Anushri Sharma"></div>
+      <div class="fgr"><label class="flb">Email *</label><input id="ue" class="fi" type="email" placeholder="user@example.com"></div>
+      <div class="fgr"><label class="flb">Phone</label><input id="up" class="fi" placeholder="+91 9XXXXXXXXX"></div>
+      <div class="fgr"><label class="flb">Gender</label><select id="ug" class="fsel"><option value="">—</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+      <div class="fgr"><label class="flb">Role *</label><select id="ur" class="fsel"><option value="">Select...</option><option value="DRIVER">Driver</option><option value="RIDER">Rider</option><option value="BOTH">Both</option></select></div>
+      <div class="fgr"><label class="flb">Home Location</label><input id="uh" class="fi" placeholder="e.g. Koramangala, Bangalore"></div>
+      <div class="fgr" style="grid-column:1/-1"><label class="flb">Office / Work Location</label><input id="uo" class="fi" placeholder="e.g. Whitefield, Bangalore"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-gh" onclick="closeModal('addUserMod')">Cancel</button>
+      <button class="btn btn-pri" onclick="addUser()"><i class="fa-solid fa-check"></i> Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL: shows user ID prominently -->
+<div class="ov" id="successMod">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="width:60px;height:60px;border-radius:50%;background:rgba(52,211,153,0.15);border:2px solid var(--em);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5rem;color:var(--em)"><i class="fa-solid fa-circle-check"></i></div>
+    <h3 style="font-size:1.1rem;margin-bottom:6px">User Registered! 🎉</h3>
+    <p class="cm fs1 mb3">Share this ID with the user — they'll need it to book rides, check history and rate drivers.</p>
+    <div style="background:var(--s3);border:2px dashed var(--ind);border-radius:var(--r);padding:20px;margin:14px 0">
+      <div style="font-size:0.72rem;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Your User ID</div>
+      <div id="newUserId" style="font-size:2.6rem;font-weight:900;color:var(--ind);font-family:'Space Grotesk',sans-serif">#—</div>
+      <div id="newUserName" style="font-size:0.9rem;color:var(--t2);margin-top:4px"></div>
+    </div>
+    <p style="font-size:0.76rem;color:var(--t3)">Screenshot or note this ID. You can also find it anytime in the Users list.</p>
+    <div class="mf" style="justify-content:center;margin-top:16px">
+      <button class="btn btn-pri" onclick="closeModal('successMod')">Got it!</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('users.html');
+document.getElementById('tb').innerHTML=topbar('Users');
+
+let allU=[], roleF='', viewM='grid';
+
+function setRole(el,r){roleF=r;document.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));el.classList.add('on');filterU();}
+function setView(v){viewM=v;document.getElementById('vGrid').style.color=v==='grid'?'var(--ind)':'var(--t2)';document.getElementById('vTable').style.color=v==='table'?'var(--ind)':'var(--t2)';filterU();}
+
+function filterU(){
+  const q=document.getElementById('uq').value.toLowerCase();
+  let f=allU.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
+  if(roleF)f=f.filter(u=>u.role===roleF);
+  document.getElementById('ucnt').textContent=f.length;
+  viewM==='table'?renderTbl(f):renderGrid(f);
+}
+
+function renderGrid(users){
+  const c=document.getElementById('usersCont');
+  if(!users.length){c.innerHTML=`<div class="empty"><div class="ei"><i class="fa-solid fa-users-slash"></i></div><h3>No users found</h3><p>Adjust filter or add a new user</p></div>`;return;}
+  c.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:11px">${users.map((u,idx)=>`
+    <div class="uc">
+      <div class="uca" style="background:${gradFor(idx)}">${ini(u.name)}${u.isVerified?`<div class="vbdg"><i class="fa-solid fa-check"></i></div>`:''}</div>
+      <div class="uc-info">
+        <div class="uc-name">${u.name||'—'} <span style="font-size:0.68rem;color:var(--ind);font-weight:700;margin-left:4px">#${u.id}</span></div>
+        <div class="uc-det">${u.email||''} ${u.phone?'· '+u.phone:''}</div>
+        <div class="uc-tags">
+          ${rbadge(u.role)}
+          ${stars(u.rating||5)}
+          <span class="fs0 cm">${(u.rating||5).toFixed(1)}★</span>
+          ${u.ecoPoints?`<span class="chip" style="font-size:0.64rem;color:var(--em)"><i class="fa-solid fa-seedling"></i>${u.ecoPoints}pts</span>`:''}
+        </div>
+        ${u.homeLocation||u.officeLocation?`<div class="fs0 cm mt2"><i class="fa-solid fa-location-dot" style="color:var(--t3)"></i> ${u.homeLocation||''} ${u.officeLocation?'→ '+u.officeLocation:''}</div>`:''}
+      </div>
+      <div class="uc-acts">
+        <button class="btn btn-gh btn-ics" title="Verify" onclick="verifyU(${u.id})"><i class="fa-solid fa-shield-check" style="color:${u.isVerified?'var(--em)':'var(--t3)'}"></i></button>
+        <button class="btn btn-gh btn-ics" title="Delete" onclick="delU(${u.id})"><i class="fa-solid fa-trash" style="color:var(--rose)"></i></button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderTbl(users){
+  const c=document.getElementById('usersCont');
+  if(!users.length){c.innerHTML=`<div class="empty"><div class="ei"><i class="fa-solid fa-users-slash"></i></div><h3>No users found</h3></div>`;return;}
+  c.innerHTML=`<div class="tw-wrap"><table class="tbl">
+    <thead><tr><th>User ID</th><th>Name</th><th>Contact</th><th>Role</th><th>Locations</th><th>Rating</th><th>Eco</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${users.map((u,idx)=>`<tr>
+      <td><span style="background:var(--s3);border:1px solid var(--b1);padding:2px 8px;border-radius:6px;font-family:monospace;font-size:0.78rem;color:var(--ind);font-weight:700">#${u.id}</span></td>
+      <td><div class="fc g2u"><div class="uca" style="width:28px;height:28px;font-size:0.62rem;background:${gradFor(idx)}">${ini(u.name)}</div><div class="fw6 fs1">${u.name||'—'}</div></div></td>
+      <td><div class="fs1">${u.email||'—'}</div><div class="fs0 cm">${u.phone||''}</div></td>
+      <td>${rbadge(u.role)}</td>
+      <td><div class="fs0 cm">${u.homeLocation||''}</div><div class="fs0 cm">${u.officeLocation||''}</div></td>
+      <td>${stars(u.rating||5)}</td>
+      <td class="ce fw7">${u.ecoPoints||0}</td>
+      <td><span class="badge ${u.isActive===false?'b-x':'b-c'}">${u.isActive===false?'Inactive':'Active'}</span></td>
+      <td><div class="fc g1"><button class="btn btn-gh btn-ics" onclick="verifyU(${u.id})"><i class="fa-solid fa-shield-check" style="color:${u.isVerified?'var(--em)':'var(--t3)'}"></i></button><button class="btn btn-gh btn-ics" onclick="delU(${u.id})"><i class="fa-solid fa-trash" style="color:var(--rose)"></i></button></div></td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+function updateStats(){
+  document.getElementById('utot').textContent=allU.length;
+  document.getElementById('udrvr').textContent=allU.filter(u=>u.role==='DRIVER'||u.role==='BOTH').length;
+  document.getElementById('uveri').textContent=allU.filter(u=>u.isVerified).length;
+  const avg=allU.length?allU.reduce((s,u)=>s+(u.rating||5),0)/allU.length:0;
+  document.getElementById('uavgr').textContent=avg.toFixed(1)+'★';
+}
+
+function addUser(){
+  const name=document.getElementById('un').value.trim(),email=document.getElementById('ue').value.trim(),role=document.getElementById('ur').value;
+  if(!name||!email||!role){toast('Name, Email and Role are required','err');return;}
+  apiFetch('/pool/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name,email,phone:document.getElementById('up').value,gender:document.getElementById('ug').value,
+    role,homeLocation:document.getElementById('uh').value,officeLocation:document.getElementById('uo').value,
+    isActive:true,totalRides:0,rating:5.0,ecoPoints:0
+  })}).then(r=>r.json()).then(j=>j.data??j).then(u=>{
+    closeModal('addUserMod');
+    // Show the ID prominently
+    document.getElementById('newUserId').textContent='#'+u.id;
+    document.getElementById('newUserName').textContent=u.name+' · '+u.role;
+    openModal('successMod');
+    allU.unshift(u); updateStats(); filterU();
+    // Reset form
+    ['un','ue','up','uh','uo'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ug').value=''; document.getElementById('ur').value='';
+  }).catch(()=>toast('Registration failed — is backend running?','err'));
+}
+
+function verifyU(id){apiFetch(`/pool/${id}/verify`,{method:'PUT'}).then(r=>r.json()).then(j=>j.data??j).then(u=>{toast(u.isVerified?'User verified ✓':'Verification removed','ok');const i=allU.findIndex(x=>x.id===id);if(i>-1)allU[i]=u;updateStats();filterU();});}
+function delU(id){if(!confirm('Delete this user? This cannot be undone.'))return;apiFetch(`/pool/${id}`,{method:'DELETE'}).then(()=>{toast('User deleted','err');allU=allU.filter(x=>x.id!==id);updateStats();filterU();});}
+
+apiFetch('/pool/all').then(r=>r.json()).then(j=>j.data??j).then(d=>{allU=d;updateStats();filterU();}).catch(()=>{document.getElementById('usersCont').innerHTML=`<div class="empty"><div class="ei"><i class="fa-solid fa-triangle-exclamation" style="color:var(--rose)"></i></div><h3>Backend offline</h3><p>Start Spring Boot on port 8081 first</p></div>`;});
+</script>
+</body>
+</html>

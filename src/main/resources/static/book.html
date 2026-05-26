@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — My Bookings</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>My Bookings 🎫</h1><p>All rides you've joined as a passenger — view status, pay, cancel.</p></div>
+      <div class="ph-actions">
+        <a href="find.html" class="btn btn-em"><i class="fa-solid fa-magnifying-glass"></i> Find New Ride</a>
+      </div>
+    </div>
+
+    <!-- USER SELECT -->
+    <div class="card" style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(129,140,248,0.03));border-color:rgba(99,102,241,0.2)">
+      <div class="cb">
+        <div class="fb" style="gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <label class="flb mb2" style="display:block"><i class="fa-solid fa-user" style="color:var(--ind)"></i> Select Your Profile</label>
+            <select id="riderSel" class="fsel"><option value="">Loading users...</option></select>
+          </div>
+          <button class="btn btn-pri" onclick="loadBookings()" style="align-self:flex-end;padding:8px 20px"><i class="fa-solid fa-search"></i> Load My Bookings</button>
+        </div>
+        <div id="riderInfo" style="display:none;margin-top:10px;padding:10px;background:var(--s3);border-radius:var(--r2)"></div>
+      </div>
+    </div>
+
+    <div id="booksCont">
+      <div class="card"><div class="cb"><div class="empty">
+        <div class="ei" style="color:var(--ind)"><i class="fa-solid fa-ticket"></i></div>
+        <h3>Select your profile above</h3>
+        <p>Choose your user profile to see all your bookings</p>
+      </div></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('book.html');
+document.getElementById('tb').innerHTML=topbar('My Bookings');
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  await populateUserSelect('riderSel','— Select your profile —','');
+  document.getElementById('riderSel').addEventListener('change',function(){
+    const info=document.getElementById('riderInfo');
+    if(this.value){
+      const opt=this.options[this.selectedIndex];
+      info.style.display='block';
+      info.innerHTML=`<div class="fc g2u"><i class="fa-solid fa-circle-check" style="color:var(--em)"></i><span class="fs1 fw6 ce">Profile loaded: ${opt.text}</span></div>`;
+    }else info.style.display='none';
+  });
+});
+
+async function loadBookings(){
+  const uid=document.getElementById('riderSel').value;
+  if(!uid){toast('Please select your profile first','err');return;}
+  document.getElementById('booksCont').innerHTML=`<div class="card"><div class="cb" style="text-align:center;padding:40px"><div class="spin" style="margin:auto 0 12px"></div><p class="cm fs1">Loading your bookings...</p></div></div>`;
+  const parts=await apiFetch(`/participation/user/${uid}`).then(r=>r.json()).then(j=>j.data??j).catch(()=>[]);
+  const c=document.getElementById('booksCont');
+  if(!parts.length){c.innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei"><i class="fa-solid fa-ticket-slash"></i></div><h3>No bookings yet</h3><p>Find and join rides to see your bookings here</p><a href="find.html" class="btn btn-pri btn-sm mt3">Find a Ride</a></div></div></div>`;return;}
+
+  const totalSpend=parts.reduce((s,p)=>s+(p.ride?.pricePerSeat||0)*(p.seatsBooked||1),0);
+  c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+      <div class="sc"><div class="sc-ic" style="background:rgba(99,102,241,0.12);color:var(--ind)"><i class="fa-solid fa-ticket"></i></div><div class="sc-v">${parts.length}</div><div class="sc-l">Total Bookings</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(52,211,153,0.12);color:var(--em)"><i class="fa-solid fa-circle-check"></i></div><div class="sc-v">${parts.filter(p=>p.status==='CONFIRMED').length}</div><div class="sc-l">Confirmed</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(251,191,36,0.12);color:var(--amb)"><i class="fa-solid fa-indian-rupee-sign"></i></div><div class="sc-v">${fM(totalSpend)}</div><div class="sc-l">Total Spent</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">
+      ${parts.map(p=>{
+        const r=p.ride||{};
+        const isCancelled=p.status==='CANCELLED';
+        return `<div class="rc" style="${isCancelled?'opacity:0.55':''}">
+          <div class="fb mb2">
+            <div class="fc g2u">
+              <span style="background:var(--s3);border:1px solid var(--b1);padding:2px 8px;border-radius:6px;font-family:monospace;font-size:0.72rem;font-weight:700;color:var(--ind)">Booking #${p.id}</span>
+              <span style="font-size:0.68rem;color:var(--t3)">Ride #${r.id||'—'}</span>
+            </div>
+            ${sbadge(p.status)}
+          </div>
+          <div class="rc-route">
+            <div class="rc-loc"><div class="dot-a"></div><span class="fw6">${r.sourceLocation||'—'}</span></div>
+            <div class="rc-line"></div>
+            <div class="rc-loc"><div class="dot-b"></div><span class="fw6">${r.destinationLocation||'—'}</span></div>
+          </div>
+          <div class="rc-meta mt2">
+            <span class="mt"><i class="fa-regular fa-calendar"></i>${r.rideDate||'—'}</span>
+            <span class="mt"><i class="fa-regular fa-clock"></i>${fT(r.rideTime)}</span>
+            <span class="mt"><i class="fa-solid fa-user-group"></i>${p.seatsBooked||1} seat(s)</span>
+            ${r.pricePerSeat?`<span style="margin-left:auto;color:var(--em);font-weight:700">${fM(r.pricePerSeat*(p.seatsBooked||1))}</span>`:''}
+          </div>
+          ${r.user?`<div class="rc-drv mt2">
+            <div class="uca" style="width:24px;height:24px;font-size:0.56rem;background:${gradFor(r.user.id||0)}">${ini(r.user.name)}</div>
+            <div style="flex:1"><div class="fs0 cm">Driver</div><div class="fs1 fw6">${r.user.name}</div></div>
+            ${r.user.phone?`<a href="tel:${r.user.phone}" class="btn btn-gh btn-xs"><i class="fa-solid fa-phone"></i></a>`:''}
+          </div>`:''}
+          ${!isCancelled?`<div class="rc-acts mt2">
+            ${r.status==='COMPLETED'?`<a href="ratings.html" class="btn btn-amb btn-sm"><i class="fa-solid fa-star"></i> Rate Ride</a>`:''}
+            <a href="payments.html" class="btn btn-em btn-sm"><i class="fa-solid fa-wallet"></i> Pay</a>
+            <button class="btn btn-rose btn-sm" style="margin-left:auto" onclick="cancelBook(${p.id})"><i class="fa-solid fa-xmark"></i> Cancel</button>
+          </div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function cancelBook(id){
+  if(!confirm('Cancel booking #'+id+'? This will restore the seat to the driver.'))return;
+  apiFetch(`/participation/${id}/cancel`,{method:'PUT'})
+    .then(()=>{toast('Booking cancelled. Seat restored to driver.','wrn');loadBookings();})
+    .catch(()=>toast('Cancellation failed','err'));
+}
+</script>
+</body>
+</html>

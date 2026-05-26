@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Offer a Ride</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph"><div><h1>Offer a Ride 🚗</h1><p>Share your journey, split costs, earn eco points.</p></div></div>
+
+    <div class="gsp">
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-car"></i> Ride Details</h3><div id="stepInd" class="fc g2u"></div></div>
+        <div class="cb">
+          <!-- STEP 1 -->
+          <div id="s1">
+            <div style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);border-radius:var(--r2);padding:12px 14px;margin-bottom:16px">
+              <div class="fc g2u mb2"><i class="fa-solid fa-circle-info" style="color:var(--ind);font-size:0.82rem"></i><span class="fs1 fw6" style="color:var(--ind)">Driver Selection</span></div>
+              <p class="fs0 cm">Select your registered profile below. Don't have one? <a href="users.html" style="color:var(--ind)">Register first →</a></p>
+            </div>
+            <div class="fgr mb3"><label class="flb"><i class="fa-solid fa-user" style="color:var(--ind)"></i> Select Your Profile (Driver) *</label>
+              <select id="f_uid" class="fsel"><option value="">Loading users...</option></select>
+              <div id="driverPreview" style="display:none;margin-top:8px;padding:10px;background:var(--s3);border-radius:var(--r2)"></div>
+            </div>
+            <div class="fg">
+              <div class="fgr"><label class="flb"><i class="fa-solid fa-location-dot" style="color:var(--ind)"></i> Pickup Location *</label><input id="f_src" class="fi" placeholder="e.g. Koramangala 5th Block" oninput="debMap()"></div>
+              <div class="fgr"><label class="flb"><i class="fa-solid fa-flag-checkered" style="color:var(--em)"></i> Drop Location *</label><input id="f_dst" class="fi" placeholder="e.g. Electronic City Phase 1" oninput="debMap()"></div>
+              <div class="fgr"><label class="flb"><i class="fa-regular fa-calendar"></i> Date *</label><input id="f_date" class="fi" type="date"></div>
+              <div class="fgr"><label class="flb"><i class="fa-regular fa-clock"></i> Departure Time *</label><input id="f_time" class="fi" type="time"></div>
+            </div>
+            <div style="text-align:right;margin-top:16px"><button class="btn btn-pri" onclick="goS(2)">Next <i class="fa-solid fa-arrow-right"></i></button></div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div id="s2" style="display:none">
+            <div class="fg">
+              <div class="fgr"><label class="flb">Available Seats *</label><input id="f_seats" class="fi" type="number" min="1" max="7" value="2" oninput="updateImpact()"></div>
+              <div class="fgr"><label class="flb">Price / Seat (₹)</label><input id="f_price" class="fi" type="number" placeholder="e.g. 150"></div>
+              <div class="fgr"><label class="flb">Vehicle Type</label><select id="f_vtype" class="fsel"><option value="">Select...</option><option>Sedan</option><option>SUV</option><option>Hatchback</option><option>EV</option><option>Bike</option></select></div>
+              <div class="fgr"><label class="flb">Est. Distance (km)</label><input id="f_dist" class="fi" type="number" placeholder="Auto-detected" oninput="updateImpact()"></div>
+            </div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin:14px 0">
+              <label class="tw"><span class="tgl"><input type="checkbox" id="f_ac"><span class="tsl"></span></span><span class="tlb"><i class="fa-solid fa-wind" style="color:var(--sky)"></i> AC Available</span></label>
+              <label class="tw"><span class="tgl"><input type="checkbox" id="f_ladies"><span class="tsl"></span></span><span class="tlb"><i class="fa-solid fa-venus" style="color:var(--rose)"></i> Ladies Only</span></label>
+            </div>
+            <div class="fgr"><label class="flb">Notes for Passengers</label><textarea id="f_notes" class="fta" placeholder="e.g. No smoking, will wait 5 min max, call on arrival..."></textarea></div>
+            <div class="fb mt4"><button class="btn btn-gh btn-sm" onclick="goS(1)"><i class="fa-solid fa-arrow-left"></i> Back</button><button class="btn btn-pri" onclick="goS(3)">Preview <i class="fa-solid fa-arrow-right"></i></button></div>
+          </div>
+
+          <!-- STEP 3: PREVIEW + CONFIRM -->
+          <div id="s3" style="display:none">
+            <div id="preview" style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:16px;margin-bottom:14px"></div>
+            <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:var(--r2);padding:12px 14px;margin-bottom:14px">
+              <div class="fc g2u mb2"><i class="fa-solid fa-leaf" style="color:var(--em)"></i><span class="fs1 fw6 ce">Eco Impact Preview</span></div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap">
+                <span class="fs1 cm">CO₂ saved: <strong class="ce" id="pCo2">—</strong></span>
+                <span class="fs1 cm">Fuel saved: <strong class="ce" id="pFuel">—</strong></span>
+                <span class="fs1 cm">Eco pts: <strong style="color:var(--amb)" id="pPts">—</strong></span>
+              </div>
+            </div>
+            <div class="fb"><button class="btn btn-gh btn-sm" onclick="goS(2)"><i class="fa-solid fa-arrow-left"></i> Edit</button><button class="btn btn-em" id="submitBtn" onclick="submitRide()"><i class="fa-solid fa-check"></i> Post Ride</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP + IMPACT -->
+      <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:70px;height:fit-content">
+        <div class="card">
+          <div class="ch"><h3><i class="fa-solid fa-map"></i> Live Route Preview</h3><span id="distBadge" class="badge b-i" style="display:none"></span></div>
+          <div class="cb" style="padding:12px"><div id="map"></div></div>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,rgba(52,211,153,0.06),rgba(16,185,129,0.03));border-color:rgba(52,211,153,0.2)">
+          <div class="cb">
+            <div class="fw7 mb3" style="font-size:0.9rem"><i class="fa-solid fa-seedling" style="color:var(--em)"></i> Impact Calculator</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div class="fb"><span class="fs1 cm">CO₂ Saved</span><span class="fs1 fw7 ce" id="iCo2">Fill route →</span></div>
+              <div class="fb"><span class="fs1 cm">Fuel Saved</span><span class="fs1 fw7 ce" id="iFuel">—</span></div>
+              <div class="fb"><span class="fs1 cm">Eco Points</span><span class="fs1 fw7" style="color:var(--amb)" id="iPts">—</span></div>
+              <div class="fb"><span class="fs1 cm">Money Saved</span><span class="fs1 fw7" style="color:var(--sky)" id="iMoney">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS: Ride ID shown after posting -->
+    <div class="ov" id="rideSuccMod">
+      <div class="modal" style="max-width:400px;text-align:center">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(52,211,153,0.15);border:2px solid var(--em);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.6rem;color:var(--em)"><i class="fa-solid fa-car"></i></div>
+        <h3 style="font-size:1.1rem;margin-bottom:6px">Ride Posted Successfully! 🎉</h3>
+        <p class="cm fs1 mb3">Your ride is now live. Passengers can find and book it. Share your Ride ID so they can reference it directly.</p>
+        <div style="background:var(--s3);border:2px dashed var(--em);border-radius:var(--r);padding:22px;margin:14px 0">
+          <div style="font-size:0.68rem;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px">Your Ride ID</div>
+          <div id="newRideId" style="font-size:2.8rem;font-weight:900;color:var(--em);font-family:'Space Grotesk',sans-serif">#—</div>
+          <div id="newRideRoute" style="font-size:0.86rem;color:var(--t2);margin-top:6px"></div>
+          <div id="newRideDate" style="font-size:0.78rem;color:var(--t3);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(99,102,241,0.08);border-radius:var(--r2);padding:10px;font-size:0.76rem;color:var(--t2);margin-bottom:14px">
+          💡 Note this ID. Passengers need it to rate your ride. You can also find all your rides in <a href="myrides.html" style="color:var(--ind)">My Rides</a>.
+        </div>
+        <div class="mf" style="justify-content:center">
+          <a href="myrides.html" class="btn btn-gh">View My Rides</a>
+          <button class="btn btn-em" onclick="closeModal('rideSuccMod');goS(1)">Post Another</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('offer.html');
+document.getElementById('tb').innerHTML=topbar('Offer a Ride');
+document.getElementById('f_date').min=new Date().toISOString().split('T')[0];
+
+// step indicator
+function renderSteps(n){
+  document.getElementById('stepInd').innerHTML=[1,2,3].map(i=>`
+    <div class="fc g1" style="font-size:0.72rem;font-weight:${i===n?'700':'500'};color:${i<=n?'var(--ind)':'var(--t3)'}">
+      <div style="width:20px;height:20px;border-radius:50%;background:${i<=n?'rgba(99,102,241,0.2)':'var(--s3)'};border:1px solid ${i<=n?'rgba(99,102,241,0.4)':'var(--b0)'};display:flex;align-items:center;justify-content:center;font-size:0.64rem;font-weight:800">${i<n?'✓':i}</div>
+      ${i===1?'Route':i===2?'Details':'Confirm'}
+    </div>
+    ${i<3?`<div style="width:16px;height:1px;background:${i<n?'var(--ind)':'var(--b0)'}"></div>`:''}`).join('');
+}
+renderSteps(1);
+
+function goS(n){
+  if(n===2){
+    if(!document.getElementById('f_uid').value){toast('Please select your driver profile','err');return;}
+    if(!document.getElementById('f_src').value.trim()||!document.getElementById('f_dst').value.trim()||!document.getElementById('f_date').value||!document.getElementById('f_time').value){toast('Fill all route fields','err');return;}
+  }
+  if(n===3){ buildPreview(); }
+  [1,2,3].forEach(i=>{document.getElementById('s'+i).style.display=i===n?'block':'none';});
+  renderSteps(n);
+}
+
+// Populate driver dropdown on load
+document.addEventListener('DOMContentLoaded',()=>{
+  populateUserSelect('f_uid','— Select your driver profile —','');
+  initMap();
+  document.getElementById('f_uid').addEventListener('change',function(){
+    const opt=this.options[this.selectedIndex];
+    const prev=document.getElementById('driverPreview');
+    if(this.value){prev.style.display='block';prev.innerHTML=`<div class="fc g2u"><i class="fa-solid fa-circle-check" style="color:var(--em)"></i><span class="fs1 fw6 ce">${opt.text}</span></div>`;}
+    else prev.style.display='none';
+  });
+});
+
+let debT;
+function debMap(){clearTimeout(debT);debT=setTimeout(async()=>{
+  const src=document.getElementById('f_src').value.trim(),dst=document.getElementById('f_dst').value.trim();
+  if(src.length>3&&dst.length>3){
+    const dist=await plotRoute(src,dst);
+    if(dist){
+      document.getElementById('f_dist').value=parseFloat(dist).toFixed(1);
+      document.getElementById('distBadge').style.display='inline-flex';
+      document.getElementById('distBadge').textContent='~'+dist+' km';
+      updateImpact();
+    }
+  }
+},700);}
+
+function updateImpact(){
+  const dist=parseFloat(document.getElementById('f_dist').value)||0;
+  const seats=parseInt(document.getElementById('f_seats').value)||2;
+  if(!dist)return;
+  const riders=Math.max(seats-1,1);
+  const fuel=(riders*dist*0.07).toFixed(2);
+  const co2=(fuel*2.31).toFixed(2);
+  const money=(riders*dist*8).toFixed(0);
+  const pts=Math.round(parseFloat(co2)*4+parseFloat(fuel)*3);
+  document.getElementById('iCo2').textContent=co2+' kg';
+  document.getElementById('iFuel').textContent=fuel+' L';
+  document.getElementById('iPts').textContent='+'+pts+' pts';
+  document.getElementById('iMoney').textContent='₹'+money;
+}
+
+function buildPreview(){
+  const src=document.getElementById('f_src').value,dst=document.getElementById('f_dst').value;
+  const date=document.getElementById('f_date').value,time=document.getElementById('f_time').value;
+  const seats=document.getElementById('f_seats').value,price=document.getElementById('f_price').value;
+  const vtype=document.getElementById('f_vtype').value,ac=document.getElementById('f_ac').checked,ladies=document.getElementById('f_ladies').checked;
+  const notes=document.getElementById('f_notes').value;
+  const dist=document.getElementById('f_dist').value;
+  document.getElementById('preview').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="rc-loc"><div class="dot-a"></div><span class="fw6">${src}</span></div>
+      <div class="rc-line"></div>
+      <div class="rc-loc"><div class="dot-b"></div><span class="fw6">${dst}</span></div>
+    </div>
+    <div class="rc-meta mt3">
+      <span class="mt"><i class="fa-regular fa-calendar"></i>${date}</span>
+      <span class="mt"><i class="fa-regular fa-clock"></i>${fT(time)}</span>
+      <span class="mt"><i class="fa-solid fa-user-check"></i>${seats} seats</span>
+      ${vtype?`<span class="mt"><i class="fa-solid fa-car"></i>${vtype}</span>`:''}
+      ${dist?`<span class="mt"><i class="fa-solid fa-road"></i>${dist} km</span>`:''}
+      ${ac?`<span class="chip" style="color:var(--sky)"><i class="fa-solid fa-wind"></i>AC</span>`:''}
+      ${ladies?`<span class="chip" style="color:var(--rose)"><i class="fa-solid fa-venus"></i>Ladies</span>`:''}
+      ${price?`<span style="margin-left:auto;color:var(--em);font-weight:700">${fM(price)}/seat</span>`:''}
+    </div>
+    ${notes?`<div class="fs0 cm mt3" style="font-style:italic;border-top:1px solid var(--b0);padding-top:8px">"${notes}"</div>`:''}`;
+  // eco preview
+  updateImpact();
+  const co2=document.getElementById('iCo2').textContent,fuel=document.getElementById('iFuel').textContent,pts=document.getElementById('iPts').textContent;
+  document.getElementById('pCo2').textContent=co2;document.getElementById('pFuel').textContent=fuel;document.getElementById('pPts').textContent=pts;
+}
+
+async function submitRide(){
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.innerHTML='<div class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></div> Posting...';
+  const data={
+    sourceLocation:document.getElementById('f_src').value.trim(),
+    destinationLocation:document.getElementById('f_dst').value.trim(),
+    rideDate:document.getElementById('f_date').value,
+    rideTime:document.getElementById('f_time').value,
+    maxSeats:parseInt(document.getElementById('f_seats').value),
+    availableSeats:parseInt(document.getElementById('f_seats').value),
+    pricePerSeat:parseFloat(document.getElementById('f_price').value)||null,
+    vehicleType:document.getElementById('f_vtype').value||null,
+    acAvailable:document.getElementById('f_ac').checked,
+    ladiesOnly:document.getElementById('f_ladies').checked,
+    notes:document.getElementById('f_notes').value||null,
+    estimatedDistanceKm:parseFloat(document.getElementById('f_dist').value)||null,
+    status:'PENDING',
+    user:{id:parseInt(document.getElementById('f_uid').value)}
+  };
+  try{
+    const ride=await apiFetch('/ride/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()).then(j=>j.data??j);
+    document.getElementById('newRideId').textContent='#'+ride.id;
+    document.getElementById('newRideRoute').textContent=ride.sourceLocation+' → '+ride.destinationLocation;
+    document.getElementById('newRideDate').textContent=ride.rideDate+' at '+fT(ride.rideTime);
+    openModal('rideSuccMod');
+    btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Post Ride';
+  }catch(e){toast('Failed to post ride — is backend running?','err');btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Post Ride';}
+}
+</script>
+</body>
+</html>

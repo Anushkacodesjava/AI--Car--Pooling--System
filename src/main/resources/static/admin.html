@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Admin</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+
+    <div class="ph">
+      <div><h1>Admin Control Center</h1><p>Platform health, SOS monitoring, broadcasts and analytics.</p></div>
+      <div class="ph-actions">
+        <span id="sysStatus" class="chip"><i class="fa-solid fa-circle pls" style="color:var(--t3)"></i> Checking...</span>
+        <button class="btn btn-pri" onclick="loadAdmin()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+      </div>
+    </div>
+
+    <!-- MASTER STATS -->
+    <div class="sg" id="adminStats" style="grid-template-columns:repeat(6,1fr)">
+      ${['Users','Rides','Bookings','Payments','Vehicles','CO₂'].map(l=>`
+        <div class="sc"><div class="sc-ic" style="background:var(--s3)"><div class="spin" style="width:14px;height:14px;border-width:2px;margin:auto"></div></div><div class="sc-v">—</div><div class="sc-l">${l}</div></div>
+      `).join('')}
+    </div>
+
+    <!-- ROW 1: SOS + Donut -->
+    <div class="g2">
+      <!-- SOS PANEL -->
+      <div class="card" style="border-color:rgba(251,113,133,0.2)">
+        <div class="ch" style="background:rgba(251,113,133,0.05)">
+          <h3 style="color:var(--rose)"><i class="fa-solid fa-triangle-exclamation"></i> SOS Alerts <span id="sosBadge" class="badge b-x" style="margin-left:6px">—</span></h3>
+          <button class="btn btn-gh btn-sm" style="color:var(--rose);border-color:rgba(251,113,133,0.3)" onclick="openModal('sosMod')"><i class="fa-solid fa-plus"></i> Test</button>
+        </div>
+        <div class="cb" id="sosList" style="max-height:220px;overflow-y:auto"><div class="spin mt3"></div></div>
+      </div>
+
+      <!-- STATUS DONUT -->
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-chart-pie"></i> Ride Status Overview</h3></div>
+        <div class="cb">
+          <div class="fc g2u" style="align-items:center">
+            <canvas id="adDonut" style="max-width:140px;max-height:140px"></canvas>
+            <div style="flex:1;min-width:0" id="adLegend"></div>
+          </div>
+          <div class="div"></div>
+          <div class="g2" style="gap:8px" id="rideKPIs"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: BROADCAST + QUICK ACTIONS + SYS INFO -->
+    <div class="g3">
+      <!-- BROADCAST -->
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-bullhorn"></i> Broadcast</h3></div>
+        <div class="cb">
+          <div class="fgr mb2"><label class="flb">Title</label><input id="bc_title" class="fi" placeholder="e.g. Maintenance Notice"></div>
+          <div class="fgr mb2"><label class="flb">Message</label><textarea id="bc_msg" class="fta" placeholder="Message to all users..." style="min-height:55px"></textarea></div>
+          <div class="fgr mb3"><label class="flb">Type</label>
+            <select id="bc_type" class="fsel"><option value="SYSTEM">System</option><option value="ECO">Eco</option><option value="RIDE_BOOKED">Ride</option></select>
+          </div>
+          <button class="btn btn-pri w-full" style="justify-content:center" onclick="broadcast()">
+            <i class="fa-solid fa-paper-plane"></i> Send to All Users
+          </button>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-bolt"></i> Quick Actions</h3></div>
+        <div class="cb">
+          <div class="qa-grid">
+            <a href="users.html"         class="qa-btn"><i class="fa-solid fa-user-plus" style="color:var(--ind)"></i><span>Add User</span></a>
+            <a href="offer.html"         class="qa-btn"><i class="fa-solid fa-car" style="color:var(--em)"></i><span>Post Ride</span></a>
+            <a href="vehicles.html"      class="qa-btn"><i class="fa-solid fa-car-rear" style="color:var(--sky)"></i><span>Vehicles</span></a>
+            <a href="impact.html"        class="qa-btn"><i class="fa-solid fa-seedling" style="color:var(--em)"></i><span>Eco Impact</span></a>
+            <a href="notifications.html" class="qa-btn"><i class="fa-regular fa-bell" style="color:var(--amb)"></i><span>Notify</span></a>
+            <a href="schedules.html"     class="qa-btn"><i class="fa-solid fa-calendar-days" style="color:var(--ind)"></i><span>Schedules</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYSTEM INFO -->
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-server"></i> System Info</h3></div>
+        <div class="cb" style="display:flex;flex-direction:column;gap:8px">
+          <div class="fb" style="padding:8px 10px;background:var(--s2);border-radius:7px"><span style="font-size:0.78rem;color:var(--t2)">Backend</span><span class="chip">Spring Boot 3.2.2</span></div>
+          <div class="fb" style="padding:8px 10px;background:var(--s2);border-radius:7px"><span style="font-size:0.78rem;color:var(--t2)">Database</span><span class="chip">MySQL · my_database</span></div>
+          <div class="fb" style="padding:8px 10px;background:var(--s2);border-radius:7px"><span style="font-size:0.78rem;color:var(--t2)">Port</span><span class="chip">8081</span></div>
+          <div class="fb" style="padding:8px 10px;background:var(--s2);border-radius:7px"><span style="font-size:0.78rem;color:var(--t2)">Security</span><span class="chip" style="color:var(--em)">JWT + BCrypt</span></div>
+          <div class="fb" style="padding:8px 10px;background:var(--s2);border-radius:7px"><span style="font-size:0.78rem;color:var(--t2)">AI Engine</span><span class="chip" style="color:var(--ind)">Levenshtein + Time</span></div>
+          <div class="fb" style="padding:8px 10px;background:var(--s2);border-radius:7px"><span style="font-size:0.78rem;color:var(--t2)">Scheduler</span><span class="chip" style="color:var(--em)">Cron 6AM daily</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT NOTIFICATIONS TABLE -->
+    <div class="card">
+      <div class="ch">
+        <h3><i class="fa-regular fa-bell"></i> Recent Notifications</h3>
+        <a href="notifications.html" class="btn btn-gh btn-sm">View All <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="tw-wrap">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>User</th><th>Title</th><th>Type</th><th>Read</th><th>Time</th></tr></thead>
+          <tbody id="notifTbody"><tr><td colspan="6" style="text-align:center;padding:30px"><div class="spin" style="margin:auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SOS MODAL -->
+<div class="ov" id="sosMod">
+  <div class="modal" style="max-width:400px">
+    <div class="mh"><h3 style="color:var(--rose)"><i class="fa-solid fa-triangle-exclamation"></i> Raise SOS Alert</h3><button class="mcl" onclick="closeModal('sosMod')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">User *</label><select id="sos_uid" class="fsel"><option value="">Loading...</option></select></div>
+      <div class="fgr"><label class="flb">Ride (optional)</label><select id="sos_rid" class="fsel"><option value="">No specific ride</option></select></div>
+      <div class="fgr" style="grid-column:1/-1"><label class="flb">Location Description *</label><input id="sos_loc" class="fi" placeholder="e.g. NH-44 near Nagpur toll, Maharashtra"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-gh" onclick="closeModal('sosMod')">Cancel</button>
+      <button class="btn btn-rose" onclick="raiseSOS()"><i class="fa-solid fa-triangle-exclamation"></i> Raise SOS</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('admin.html');
+document.getElementById('tb').innerHTML = topbar('Admin Panel');
+
+let donutInst = null;
+
+async function loadAdmin(){
+  // Ping
+  try{
+    await fetch(API+'/pool/');
+    document.getElementById('sysStatus').innerHTML='<i class="fa-solid fa-circle" style="color:var(--em)"></i> Online';
+    document.getElementById('sysStatus').style.borderColor='rgba(52,211,153,0.3)';
+    document.getElementById('sysStatus').style.color='var(--em)';
+  }catch{
+    document.getElementById('sysStatus').innerHTML='<i class="fa-solid fa-circle" style="color:var(--rose)"></i> Offline';
+  }
+
+  const [dash,rs,sosAll,notifs] = await Promise.allSettled([
+    pubFetch('/admin/dashboard'),
+    pubFetch('/ride/stats'),
+    pubFetch('/sos/all'),
+    pubFetch('/notification/all'),
+  ]);
+  const d=dash.value||{}, rStats=rs.value||{}, sos=sosAll.value||[], ntf=notifs.value||[];
+
+  // Stats
+  const cfg=[
+    {ic:'fa-users',       c:'var(--ind)',  bg:'rgba(99,102,241,0.12)', v:d.totalUsers||0,         l:'Users'},
+    {ic:'fa-route',       c:'var(--em)',   bg:'rgba(52,211,153,0.12)', v:d.totalRides||0,         l:'Rides'},
+    {ic:'fa-handshake-simple',c:'var(--ora)',bg:'rgba(251,146,60,0.12)',v:d.totalParticipations||0,l:'Bookings'},
+    {ic:'fa-receipt',     c:'var(--amb)',  bg:'rgba(251,191,36,0.12)', v:d.totalPayments||0,      l:'Payments'},
+    {ic:'fa-car-rear',    c:'var(--sky)',  bg:'rgba(56,189,248,0.12)', v:d.totalVehicles||0,      l:'Vehicles'},
+    {ic:'fa-leaf',        c:'var(--em)',   bg:'rgba(52,211,153,0.12)', v:(d.totalCarbonSaved||0).toFixed(1)+'kg', l:'CO₂'},
+  ];
+  document.getElementById('adminStats').innerHTML = cfg.map(c=>`
+    <div class="sc">
+      <div class="sc-ic" style="background:${c.bg};color:${c.c}"><i class="fa-solid ${c.ic}"></i></div>
+      <div class="sc-v">${c.v}</div><div class="sc-l">${c.l}</div>
+    </div>`).join('');
+
+  // SOS
+  const active = sos.filter(s=>s.status==='ACTIVE');
+  document.getElementById('sosBadge').textContent = active.length+' Active';
+  document.getElementById('sosList').innerHTML = sos.length ? sos.slice(0,8).map(s=>`
+    <div style="display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--b0)">
+      <div style="width:8px;height:8px;border-radius:50%;background:${s.status==='ACTIVE'?'var(--rose)':'var(--em)'};flex-shrink:0;margin-top:5px;${s.status==='ACTIVE'?'animation:sosPulse 1.4s infinite':''}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="fb">
+          <span style="font-size:0.8rem;font-weight:600">${s.user?.name||'Unknown'}</span>
+          <span class="badge ${s.status==='ACTIVE'?'b-x':'b-c'}">${s.status}</span>
+        </div>
+        <div style="font-size:0.71rem;color:var(--t2);margin-top:2px">${s.locationDescription||'No location'}</div>
+        <div style="font-size:0.66rem;color:var(--t3)">${s.createdAt?new Date(s.createdAt).toLocaleString('en-IN'):''}</div>
+      </div>
+      ${s.status==='ACTIVE'?`<button class="btn btn-em btn-xs" onclick="resolveSOS(${s.id})"><i class="fa-solid fa-check"></i></button>`:''}
+    </div>`).join('')
+    : `<div class="empty" style="padding:24px"><div class="ei"><i class="fa-solid fa-shield-check" style="color:var(--em)"></i></div><h3>All clear!</h3><p style="font-size:0.78rem">No SOS alerts</p></div>`;
+
+  // Donut
+  const labs=Object.keys(rStats), vals=Object.values(rStats);
+  const clrs={PENDING:'#fb923c',ACCEPTED:'#38bdf8',ONGOING:'#818cf8',COMPLETED:'#34d399',CANCELLED:'#fb7185'};
+  if(donutInst) donutInst.destroy();
+  donutInst = new Chart(document.getElementById('adDonut'),{
+    type:'doughnut',
+    data:{labels:labs,datasets:[{data:vals,backgroundColor:labs.map(l=>clrs[l]||'#3f3f46'),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false}},cutout:'68%'}
+  });
+  document.getElementById('adLegend').innerHTML = labs.map((l,i)=>`
+    <div class="fb" style="margin-bottom:7px">
+      <div class="fc g1"><div style="width:7px;height:7px;border-radius:2px;background:${clrs[l]||'#3f3f46'}"></div><span style="font-size:0.7rem">${l}</span></div>
+      <span style="font-size:0.7rem;font-weight:700;color:${clrs[l]||'var(--t2)'}">${vals[i]}</span>
+    </div>`).join('');
+
+  document.getElementById('rideKPIs').innerHTML=`
+    <div style="text-align:center;padding:9px;background:var(--s2);border-radius:7px">
+      <div style="font-size:1.18rem;font-weight:700;color:var(--ora);letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${d.pendingRides||0}</div>
+      <div style="font-size:0.68rem;color:var(--t2)">Pending</div>
+    </div>
+    <div style="text-align:center;padding:9px;background:var(--s2);border-radius:7px">
+      <div style="font-size:1.18rem;font-weight:700;color:var(--em);letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${d.completedRides||0}</div>
+      <div style="font-size:0.68rem;color:var(--t2)">Completed</div>
+    </div>`;
+
+  // Notifications table
+  document.getElementById('notifTbody').innerHTML = ntf.length ? ntf.slice(0,8).map(n=>`
+    <tr>
+      <td style="font-size:0.68rem;color:var(--t3)">#${n.id}</td>
+      <td style="font-size:0.79rem;font-weight:600">${n.user?.name||'—'}</td>
+      <td style="font-size:0.79rem">${n.title||'—'}</td>
+      <td><span class="badge b-i" style="font-size:0.58rem">${n.type||'—'}</span></td>
+      <td>${n.isRead?'<i class="fa-solid fa-check" style="color:var(--em)"></i>':'<div style="width:6px;height:6px;border-radius:50%;background:var(--ind)"></div>'}</td>
+      <td style="font-size:0.68rem;color:var(--t3)">${n.createdAt?new Date(n.createdAt).toLocaleString('en-IN'):''}</td>
+    </tr>`).join('')
+    : `<tr><td colspan="6"><div class="empty" style="padding:20px"><div class="ei"><i class="fa-regular fa-bell"></i></div><h3>No notifications</h3></div></td></tr>`;
+}
+
+function broadcast(){
+  const title=document.getElementById('bc_title').value.trim();
+  const msg=document.getElementById('bc_msg').value.trim();
+  const type=document.getElementById('bc_type').value;
+  if(!title||!msg){ toast('Title and message required','err'); return; }
+  apiFetch(`/notification/broadcast?title=${encodeURIComponent(title)}&message=${encodeURIComponent(msg)}&type=${type}`,{method:'POST'})
+    .then(()=>{ toast('Broadcast sent to all users!'); document.getElementById('bc_title').value=''; document.getElementById('bc_msg').value=''; loadAdmin(); })
+    .catch(()=>toast('Broadcast failed','err'));
+}
+
+function raiseSOS(){
+  const uid=document.getElementById('sos_uid').value;
+  const loc=document.getElementById('sos_loc').value.trim();
+  const rid=document.getElementById('sos_rid').value;
+  if(!uid||!loc){ toast('User and location required','err'); return; }
+  let url=`/sos/raise?userId=${uid}&location=${encodeURIComponent(loc)}`;
+  if(rid) url+=`&rideId=${rid}`;
+  apiFetch(url,{method:'POST'}).then(()=>{ toast('SOS alert raised!','wrn'); closeModal('sosMod'); loadAdmin(); });
+}
+
+function resolveSOS(id){
+  apiFetch(`/sos/${id}/resolve?resolvedBy=Admin`,{method:'PUT'})
+    .then(()=>{ toast('SOS resolved ✓'); loadAdmin(); });
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await populateUserSelect('sos_uid','— Select user —','');
+  await populateRideSelect('sos_rid','No specific ride',false);
+  loadAdmin();
+});
+</script>
+</body>
+</html>

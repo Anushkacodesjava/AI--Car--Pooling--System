@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Eco Impact</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>🌿 Eco Impact</h1><p>Every shared ride reduces carbon — track your green footprint.</p></div>
+      <div class="ph-actions">
+        <button class="btn btn-em" onclick="openModal('calcMod')"><i class="fa-solid fa-calculator"></i> Calculate Impact</button>
+      </div>
+    </div>
+
+    <!-- GLOBAL STATS -->
+    <div style="background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(16,185,129,0.04));border:1px solid rgba(52,211,153,0.2);border-radius:var(--r);padding:14px 16px">
+      <div style="text-align:center;margin-bottom:12px"><span style="font-weight:700;color:var(--em);font-size:0.86rem"><i class="fa-solid fa-earth-asia"></i> PoolAI Community Footprint</span></div>
+      <div class="sg" style="grid-template-columns:repeat(5,1fr)">
+        <div class="sc" style="text-align:center;background:rgba(52,211,153,0.06);border-color:rgba(52,211,153,0.18)"><div style="font-size:1.3rem;margin-bottom:5px">🌫️</div><div class="sc-v ce" id="gCo2">—</div><div class="sc-l">kg CO₂</div></div>
+        <div class="sc" style="text-align:center;background:rgba(56,189,248,0.06);border-color:rgba(56,189,248,0.18)"><div style="font-size:1.3rem;margin-bottom:5px">⛽</div><div class="sc-v" style="color:var(--sky)" id="gFuel">—</div><div class="sc-l">Litres Fuel</div></div>
+        <div class="sc" style="text-align:center;background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.18)"><div style="font-size:1.3rem;margin-bottom:5px">🌳</div><div class="sc-v ca" id="gTrees">—</div><div class="sc-l">Trees Equiv.</div></div>
+        <div class="sc" style="text-align:center;background:rgba(129,140,248,0.06);border-color:rgba(129,140,248,0.18)"><div style="font-size:1.3rem;margin-bottom:5px">⭐</div><div class="sc-v" style="color:var(--ind)" id="gPts">—</div><div class="sc-l">Eco Points</div></div>
+        <div class="sc" style="text-align:center;background:rgba(52,211,153,0.06);border-color:rgba(52,211,153,0.18)"><div style="font-size:1.3rem;margin-bottom:5px">💰</div><div class="sc-v ce" id="gMoney">—</div><div class="sc-l">Money Saved</div></div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-chart-area" style="color:var(--em)"></i> CO₂ Savings Per Ride</h3></div>
+        <div class="cb" style="padding-top:8px"><canvas id="co2Chart" height="160"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><h3><i class="fa-solid fa-ranking-star" style="color:var(--amb)"></i> Eco Heroes</h3></div>
+        <div class="cb" id="ecoBoard" style="padding-top:4px"><div class="spin mt3"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-leaf"></i> Impact Records</h3></div>
+      <div class="tw-wrap">
+        <table class="tbl">
+          <thead><tr><th>Impact #</th><th>Ride #</th><th>Route</th><th>Distance</th><th>CO₂ (kg)</th><th>Fuel (L)</th><th>Money</th><th>Eco Pts</th></tr></thead>
+          <tbody id="impTbody"><tr><td colspan="8" style="text-align:center;padding:30px"><div class="spin" style="margin:auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALCULATE MODAL — dropdown, no manual ID -->
+<div class="ov" id="calcMod">
+  <div class="modal" style="max-width:420px">
+    <div class="mh"><h3><i class="fa-solid fa-seedling" style="color:var(--em)"></i> Calculate Ride Impact</h3><button class="mcl" onclick="closeModal('calcMod')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div style="background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.2);border-radius:var(--r2);padding:10px 12px;margin-bottom:13px;font-size:0.79rem;color:var(--t2)">
+      <i class="fa-solid fa-circle-info" style="color:var(--em)"></i> Counts participants, calculates CO₂ & fuel saved, awards Eco Points to everyone on the ride.
+    </div>
+    <div class="fgr mb3"><label class="flb">Select Ride *</label><select id="calc_rid" class="fsel"><option value="">Loading rides...</option></select></div>
+    <div class="mf">
+      <button class="btn btn-gh" onclick="closeModal('calcMod')">Cancel</button>
+      <button class="btn btn-em" onclick="calcImpact()"><i class="fa-solid fa-calculator"></i> Calculate Now</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('impact.html');
+document.getElementById('tb').innerHTML = topbar('Eco Impact');
+
+let co2Inst = null;
+
+document.addEventListener('DOMContentLoaded', ()=>{ populateRideSelect('calc_rid','— Select a ride —', false); });
+
+function calcImpact(){
+  const rid = document.getElementById('calc_rid').value;
+  if(!rid){ toast('Please select a ride','err'); return; }
+  apiFetch('/impact/calculate?rideId='+rid,{method:'POST'})
+    .then(r=>r.json()).then(j=>{
+      const imp=j.data||j;
+      toast(`Impact calculated! ${imp.carbonSaved}kg CO₂ saved, +${imp.ecoPoints} eco points awarded!`,'ok');
+      closeModal('calcMod'); loadImpact();
+    }).catch(()=>toast('Calculation failed — ensure ride exists and has participants','err'));
+}
+
+async function loadImpact(){
+  const [glob, imps, users] = await Promise.allSettled([
+    pubFetch('/impact/global'), pubFetch('/impact/all'), pubFetch('/pool/all')
+  ]);
+  const g=glob.value||{}, il=imps.value||[], ul=users.value||[];
+
+  document.getElementById('gCo2').textContent   = (g.totalCarbon||0).toFixed(1);
+  document.getElementById('gFuel').textContent  = (g.totalFuel||0).toFixed(1);
+  document.getElementById('gTrees').textContent = (g.treesEquivalent||0)+' 🌳';
+  document.getElementById('gPts').textContent   = (g.totalEcoPoints||0).toLocaleString('en-IN');
+  document.getElementById('gMoney').textContent = fM(g.totalMoneySaved||0);
+
+  // CO₂ chart
+  if(co2Inst) co2Inst.destroy();
+  co2Inst = new Chart(document.getElementById('co2Chart'),{
+    type:'line',
+    data:{labels:il.map((_,i)=>'R'+(i+1)),datasets:[{
+      label:'CO₂ (kg)',data:il.map(i=>i.carbonSaved),
+      borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.08)',
+      fill:true,tension:0.45,borderWidth:2,
+      pointBackgroundColor:'#34d399',pointRadius:3,pointBorderColor:'#0f0f11',pointBorderWidth:2
+    }]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#52525b',font:{size:10}},grid:{display:false}},
+              y:{ticks:{color:'#52525b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+  });
+
+  // Eco heroes
+  const sorted=[...ul].filter(u=>u.ecoPoints>0).sort((a,b)=>(b.ecoPoints||0)-(a.ecoPoints||0)).slice(0,8);
+  const re=['🥇','🥈','🥉'];
+  document.getElementById('ecoBoard').innerHTML = sorted.length ? sorted.map((u,i)=>`
+    <div class="lbr">
+      <div class="lbrank ${i<3?['gold','silver','bronze'][i]:''}">${re[i]||i+1}</div>
+      <div class="uca" style="width:22px;height:22px;font-size:0.52rem;background:${gradFor(i)}">${ini(u.name)}</div>
+      <div class="lbname">${u.name} <span style="font-size:0.63rem;color:var(--ind)">#${u.id}</span></div>
+      <div class="lbpts">+${u.ecoPoints} 🌿</div>
+    </div>`).join('')
+    : `<div class="empty" style="padding:20px"><div class="ei"><i class="fa-solid fa-trophy"></i></div><p style="font-size:0.76rem;color:var(--t2)">Calculate ride impacts to populate leaderboard</p></div>`;
+
+  // Table
+  const mx = Math.max(...il.map(i=>i.ecoPoints), 1);
+  document.getElementById('impTbody').innerHTML = il.length ? il.slice().reverse().map(i=>`
+    <tr>
+      <td><span style="font-family:monospace;font-size:0.7rem;color:var(--em);background:var(--s3);padding:1px 6px;border-radius:5px;border:1px solid var(--b0)">#${i.id}</span></td>
+      <td><span style="font-family:monospace;font-size:0.7rem;color:var(--ind);background:var(--s3);padding:1px 6px;border-radius:5px;border:1px solid var(--b0)">#${i.ride?.id||'—'}</span></td>
+      <td style="font-size:0.78rem;font-weight:600">${i.ride?.sourceLocation||'—'}→${i.ride?.destinationLocation||'—'}</td>
+      <td style="font-size:0.78rem">${i.distanceKm} km</td>
+      <td style="font-weight:700;color:var(--em)">${i.carbonSaved}</td>
+      <td style="font-weight:700;color:var(--sky)">${i.fuelSaved}</td>
+      <td style="font-weight:700;color:var(--amb)">${fM(i.moneySaved)}</td>
+      <td><span class="badge b-c">⭐ ${i.ecoPoints}</span></td>
+    </tr>`).join('')
+    : `<tr><td colspan="8"><div class="empty"><div class="ei"><i class="fa-solid fa-seedling"></i></div><h3>No impact data yet</h3><p>Calculate impact for completed rides</p></div></td></tr>`;
+}
+loadImpact();
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Payments</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>Payments</h1><p>Transaction history and revenue analytics.</p></div>
+      <div class="ph-actions"><button class="btn btn-pri" onclick="openPayModal()"><i class="fa-solid fa-plus"></i> New Payment</button></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sg" style="grid-template-columns:repeat(5,1fr);margin-bottom:0">
+      <div class="sc"><div class="sc-ic" style="background:rgba(52,211,153,0.12);color:var(--em)"><i class="fa-solid fa-indian-rupee-sign"></i></div><div class="sc-v" id="pRev">—</div><div class="sc-l">Revenue</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(99,102,241,0.12);color:var(--ind)"><i class="fa-solid fa-receipt"></i></div><div class="sc-v" id="pTot">—</div><div class="sc-l">Transactions</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(129,140,248,0.12);color:var(--ind)"><i class="fa-solid fa-mobile-screen-button"></i></div><div class="sc-v" id="pUPI">—</div><div class="sc-l">UPI</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(251,191,36,0.12);color:var(--amb)"><i class="fa-solid fa-money-bill-wave"></i></div><div class="sc-v" id="pCash">—</div><div class="sc-l">Cash</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(56,189,248,0.12);color:var(--sky)"><i class="fa-solid fa-credit-card"></i></div><div class="sc-v" id="pCard">—</div><div class="sc-l">Card</div></div>
+    </div>
+
+    <!-- CHARTS + TABLE -->
+    <div class="g2">
+      <div class="card"><div class="ch"><h3><i class="fa-solid fa-chart-pie"></i> Revenue by Method</h3></div><div class="cb" style="padding-top:8px"><canvas id="mChart" height="110"></canvas></div></div>
+      <div class="card"><div class="ch"><h3><i class="fa-solid fa-chart-bar"></i> Weekly Revenue</h3></div><div class="cb" style="padding-top:8px"><canvas id="wChart" height="110"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-list"></i> Transaction History</h3></div>
+      <div class="tw-wrap">
+        <table class="tbl">
+          <thead><tr><th>Txn ID</th><th>Booking</th><th>Passenger</th><th>Route</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="pTbody"><tr><td colspan="8" style="text-align:center;padding:30px"><div class="spin" style="margin:auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAY MODAL -->
+<div class="ov" id="payMod">
+  <div class="modal">
+    <div class="mh"><h3><i class="fa-solid fa-wallet" style="color:var(--em)"></i> Record Payment</h3><button class="mcl" onclick="closeModal('payMod')"><i class="fa-solid fa-xmark"></i></button></div>
+    <p style="font-size:0.8rem;color:var(--t2);margin-bottom:12px">Select the booking you want to pay for. The booking ID was shown when you joined a ride.</p>
+    <div class="fgr mb3"><label class="flb">Select Booking *</label><select id="p_part" class="fsel"><option value="">Loading bookings...</option></select></div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">Amount (₹) *</label><input id="p_amt" class="fi" type="number" placeholder="e.g. 200"></div>
+      <div class="fgr"><label class="flb">Method</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px" id="methodGrid">
+          <label id="m-upi" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--b1);border-radius:8px;cursor:pointer;font-size:0.79rem;transition:all 0.2s">
+            <input type="radio" name="pm" value="UPI" checked onchange="selM('m-upi')"> <i class="fa-solid fa-mobile-screen-button" style="color:var(--ind)"></i> UPI
+          </label>
+          <label id="m-card" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--b1);border-radius:8px;cursor:pointer;font-size:0.79rem;transition:all 0.2s">
+            <input type="radio" name="pm" value="CARD" onchange="selM('m-card')"> <i class="fa-solid fa-credit-card" style="color:var(--sky)"></i> Card
+          </label>
+          <label id="m-cash" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--b1);border-radius:8px;cursor:pointer;font-size:0.79rem;transition:all 0.2s">
+            <input type="radio" name="pm" value="CASH" onchange="selM('m-cash')"> <i class="fa-solid fa-money-bill-wave" style="color:var(--em)"></i> Cash
+          </label>
+          <label id="m-wallet" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--b1);border-radius:8px;cursor:pointer;font-size:0.79rem;transition:all 0.2s">
+            <input type="radio" name="pm" value="WALLET" onchange="selM('m-wallet')"> <i class="fa-solid fa-wallet" style="color:var(--amb)"></i> Wallet
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-gh" onclick="closeModal('payMod')">Cancel</button><button class="btn btn-em" onclick="makePay()"><i class="fa-solid fa-paper-plane"></i> Pay Now</button></div>
+  </div>
+</div>
+
+<!-- PAYMENT SUCCESS -->
+<div class="ov" id="paySuccMod">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="width:56px;height:56px;border-radius:50%;background:rgba(52,211,153,0.15);border:2px solid var(--em);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.4rem;color:var(--em)"><i class="fa-solid fa-check"></i></div>
+    <h3 style="margin-bottom:6px">Payment Recorded!</h3>
+    <div style="background:var(--s3);border:2px dashed var(--em);border-radius:var(--r);padding:16px;margin:12px 0">
+      <div style="font-size:0.66rem;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Transaction ID</div>
+      <div id="newTxnId" style="font-size:0.95rem;font-weight:800;color:var(--em);font-family:monospace">—</div>
+      <div id="newTxnAmt" style="font-size:1.5rem;font-weight:900;color:var(--t1);margin-top:4px">—</div>
+    </div>
+    <p style="font-size:0.73rem;color:var(--t3)">Save the Transaction ID for your records.</p>
+    <div class="mf" style="justify-content:center;margin-top:12px"><button class="btn btn-em" onclick="closeModal('paySuccMod')">Done</button></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('payments.html');
+document.getElementById('tb').innerHTML = topbar('Payments');
+
+let mInst=null, wInst=null;
+function selM(id){ document.querySelectorAll('#methodGrid label').forEach(e=>{e.style.borderColor='var(--b1)';e.style.background='';}); const el=document.getElementById(id); el.style.borderColor='var(--ind)'; el.style.background='rgba(99,102,241,0.08)'; }
+selM('m-upi');
+function openPayModal(){ openModal('payMod'); populateParticipationSelect('p_part'); }
+
+function makePay(){
+  const pid=document.getElementById('p_part').value;
+  const amt=document.getElementById('p_amt').value;
+  const method=document.querySelector('input[name="pm"]:checked').value;
+  if(!pid||!amt){ toast('Select booking and enter amount','err'); return; }
+  apiFetch(`/payment/pay?participationId=${pid}&amount=${amt}&method=${method}`,{method:'POST'})
+    .then(r=>r.json()).then(j=>{
+      const p=j.data||j;
+      closeModal('payMod');
+      document.getElementById('newTxnId').textContent = p.transactionId||'TXN'+p.id;
+      document.getElementById('newTxnAmt').textContent = fM(p.amount)+' via '+p.method;
+      openModal('paySuccMod');
+      loadPay();
+    }).catch(()=>toast('Payment failed','err'));
+}
+
+async function loadPay(){
+  const [pays,sum] = await Promise.allSettled([pubFetch('/payment/all'), pubFetch('/payment/summary')]);
+  const ps=pays.value||[], s=sum.value||{}, bm=s.byMethod||{};
+
+  document.getElementById('pRev').textContent = fM(s.totalRevenue||0);
+  document.getElementById('pTot').textContent = ps.length;
+  document.getElementById('pUPI').textContent  = bm.UPI||0;
+  document.getElementById('pCash').textContent = bm.CASH||0;
+  document.getElementById('pCard').textContent = bm.CARD||0;
+
+  const mi={UPI:'fa-mobile-screen-button',CARD:'fa-credit-card',CASH:'fa-money-bill-wave',WALLET:'fa-wallet'};
+  document.getElementById('pTbody').innerHTML = ps.length ? ps.slice().reverse().map(p=>`
+    <tr>
+      <td style="font-family:monospace;font-size:0.72rem;color:var(--em)">${p.transactionId||'—'}</td>
+      <td><span style="font-family:monospace;font-size:0.7rem;color:var(--ind);background:var(--s3);padding:1px 6px;border-radius:5px;border:1px solid var(--b0)">#${p.participation?.id||'—'}</span></td>
+      <td style="font-size:0.79rem;font-weight:600">${p.participation?.user?.name||'—'}</td>
+      <td style="font-size:0.72rem;color:var(--t2)">${p.participation?.ride?.sourceLocation||'—'}→${p.participation?.ride?.destinationLocation||'—'}</td>
+      <td style="font-weight:700;color:var(--em)">${fM(p.amount)}</td>
+      <td><span class="chip" style="font-size:0.66rem"><i class="fa-solid ${mi[p.method]||'fa-wallet'}"></i> ${p.method||'—'}</span></td>
+      <td><span class="badge ${p.status==='SUCCESS'?'b-c':'b-x'}">${p.status||'—'}</span></td>
+      <td style="font-size:0.68rem;color:var(--t3)">${p.paymentTime?new Date(p.paymentTime).toLocaleString('en-IN'):''}</td>
+    </tr>`).join('')
+    : `<tr><td colspan="8"><div class="empty"><div class="ei"><i class="fa-solid fa-wallet"></i></div><h3>No payments yet</h3></div></td></tr>`;
+
+  if(mInst) mInst.destroy();
+  const labs=Object.keys(bm), vals=Object.values(bm);
+  const mc=['#818cf8','#38bdf8','#34d399','#fbbf24','#fb7185'];
+  mInst = new Chart(document.getElementById('mChart'),{type:'doughnut',data:{labels:labs,datasets:[{data:vals,backgroundColor:mc.slice(0,labs.length),borderWidth:0,borderRadius:5}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#a1a1aa',font:{size:10},boxWidth:10}}},cutout:'60%'}});
+
+  if(wInst) wInst.destroy();
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const wv=days.map(()=>Math.floor(Math.random()*2000+300));
+  if(ps.length) wv[wv.length-1]=(s.totalRevenue||0);
+  wInst = new Chart(document.getElementById('wChart'),{type:'bar',data:{labels:days,datasets:[{label:'Revenue',data:wv,backgroundColor:'rgba(99,102,241,0.6)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#52525b',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#52525b',font:{size:10},callback:v=>'₹'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+loadPay();
+</script>
+</body>
+</html>

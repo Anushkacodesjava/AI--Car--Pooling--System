@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Ratings</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>Ratings & Reviews</h1><p>Driver trust scores, feedback and service quality.</p></div>
+      <div class="ph-actions"><button class="btn btn-pri" onclick="openRatingModal()"><i class="fa-solid fa-star"></i> Rate a Ride</button></div>
+    </div>
+
+    <div class="gsp">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- OVERVIEW -->
+        <div class="card" style="background:linear-gradient(135deg,rgba(251,191,36,0.06),rgba(251,146,60,0.04));border-color:rgba(251,191,36,0.2)">
+          <div class="cb">
+            <div class="fb mb3">
+              <div>
+                <div style="font-size:3.8rem;font-weight:900;color:var(--amb);line-height:1" id="avgSc">—</div>
+                <div id="avgStars" style="margin-top:6px;font-size:1.1rem"></div>
+                <div class="fs1 cm mt2" id="totRat">Loading...</div>
+              </div>
+              <div style="flex:1;max-width:200px;margin-left:20px" id="distBars"></div>
+            </div>
+            <div class="g3" id="qualPct" style="gap:9px"></div>
+          </div>
+        </div>
+        <!-- RECENT REVIEWS -->
+        <div class="card">
+          <div class="ch"><h3><i class="fa-solid fa-comments"></i> Recent Reviews</h3></div>
+          <div class="cb" id="reviewsList"><div class="spin mt3"></div></div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="card" style="height:fit-content">
+        <div class="ch"><h3><i class="fa-solid fa-table-list"></i> All Ratings</h3></div>
+        <div class="tw-wrap">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Rater</th><th>Rated</th><th>Ride</th><th>Score</th><th>Tags</th><th>Comment</th></tr></thead>
+            <tbody id="ratTbody"><tr><td colspan="7" style="text-align:center;padding:30px"><div class="spin" style="margin:auto"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RATING MODAL — all dropdowns, no manual IDs -->
+<div class="ov" id="ratMod">
+  <div class="modal">
+    <div class="mh"><h3><i class="fa-solid fa-star" style="color:var(--amb)"></i> Rate a Ride</h3><button class="mcl" onclick="closeModal('ratMod')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:var(--r2);padding:10px 13px;margin-bottom:14px">
+      <p class="fs0 cm">You can only rate rides you participated in. Select yourself (rater) and the person you want to rate.</p>
+    </div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">Select Ride *</label><select id="rt_ride" class="fsel"><option value="">Loading rides...</option></select></div>
+      <div class="fgr"><label class="flb">You (Rater) *</label><select id="rt_rater" class="fsel"><option value="">Loading users...</option></select></div>
+      <div class="fgr"><label class="flb">Rate This Person *</label><select id="rt_rated" class="fsel"><option value="">Loading users...</option></select></div>
+      <div class="fgr"><label class="flb">Your Score *</label>
+        <select id="rt_score" class="fsel">
+          <option value="5">⭐⭐⭐⭐⭐ Excellent (5/5)</option>
+          <option value="4">⭐⭐⭐⭐ Good (4/5)</option>
+          <option value="3">⭐⭐⭐ Average (3/5)</option>
+          <option value="2">⭐⭐ Poor (2/5)</option>
+          <option value="1">⭐ Terrible (1/5)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin:13px 0">
+      <label class="tw"><span class="tgl"><input type="checkbox" id="rt_punct"><span class="tsl"></span></span><span class="tlb">⏰ Punctual</span></label>
+      <label class="tw"><span class="tgl"><input type="checkbox" id="rt_clean"><span class="tsl"></span></span><span class="tlb">🚗 Clean Vehicle</span></label>
+      <label class="tw"><span class="tgl"><input type="checkbox" id="rt_safe"><span class="tsl"></span></span><span class="tlb">🛡️ Safe Driver</span></label>
+    </div>
+    <div class="fgr"><label class="flb">Comment (optional)</label><textarea id="rt_cmt" class="fta" placeholder="Tell others about your experience..."></textarea></div>
+    <div class="mf"><button class="btn btn-gh" onclick="closeModal('ratMod')">Cancel</button><button class="btn btn-pri" onclick="submitRating()"><i class="fa-solid fa-paper-plane"></i> Submit Rating</button></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('ratings.html');
+document.getElementById('tb').innerHTML=topbar('Ratings');
+
+function openRatingModal(){
+  openModal('ratMod');
+  populateRideSelect('rt_ride','— Select the ride —',false);
+  populateUserSelect('rt_rater','— Select yourself —','');
+  populateUserSelect('rt_rated','— Select who you are rating —','');
+}
+
+function submitRating(){
+  const ride=document.getElementById('rt_ride').value;
+  const rater=document.getElementById('rt_rater').value;
+  const rated=document.getElementById('rt_rated').value;
+  const score=document.getElementById('rt_score').value;
+  if(!ride||!rater||!rated){toast('Please select ride, rater and rated user','err');return;}
+  if(rater===rated){toast('You cannot rate yourself','err');return;}
+  const cmt=encodeURIComponent(document.getElementById('rt_cmt').value);
+  const punct=document.getElementById('rt_punct').checked;
+  const clean=document.getElementById('rt_clean').checked;
+  const safe=document.getElementById('rt_safe').checked;
+  apiFetch(`/rating/give?rideId=${ride}&raterId=${rater}&ratedUserId=${rated}&score=${score}&comment=${cmt}&punctual=${punct}&cleanVehicle=${clean}&safeDriver=${safe}`,{method:'POST'})
+    .then(r=>r.json()).then(j=>j.data??j).then(()=>{toast('Rating submitted! Thank you for your feedback 🌟','ok');closeModal('ratMod');loadRatings();})
+    .catch(()=>toast('Submission failed','err'));
+}
+
+async function loadRatings(){
+  const[rl,sm]=await Promise.allSettled([apiFetch('/rating/all').then(r=>r.json()).then(j=>j.data??j),apiFetch('/rating/summary').then(r=>r.json()).then(j=>j.data??j)]);
+  const ratings=rl.value||[], s=sm.value||{};
+  const avg=s.average||0;
+  document.getElementById('avgSc').textContent=avg.toFixed(1);
+  document.getElementById('avgStars').innerHTML=stars(avg,'1rem');
+  document.getElementById('totRat').textContent='Based on '+(s.total||0)+' ratings';
+
+  // dist bars
+  const dist=s.distribution||[0,0,0,0,0,0];
+  const maxD=Math.max(...dist.slice(1),1);
+  document.getElementById('distBars').innerHTML=[5,4,3,2,1].map(n=>`
+    <div class="fc g2u" style="margin-bottom:7px">
+      <span style="width:13px;text-align:right;font-size:0.72rem;font-weight:700;color:var(--amb)">${n}</span>
+      <div style="flex:1;height:7px;background:var(--s3);border-radius:4px;overflow:hidden">
+        <div style="width:${((dist[n]||0)/maxD*100).toFixed(0)}%;height:100%;background:var(--amb);border-radius:4px;transition:width 0.8s ease"></div>
+      </div>
+      <span style="width:18px;font-size:0.68rem;color:var(--t3)">${dist[n]||0}</span>
+    </div>`).join('');
+
+  // quality %
+  document.getElementById('qualPct').innerHTML=`
+    <div style="text-align:center;padding:9px;background:var(--s2);border-radius:var(--r2)"><div style="font-size:1.3rem;font-weight:800;color:var(--sky)">${s.punctualPct||0}%</div><div class="fs0 cm">⏰ Punctual</div></div>
+    <div style="text-align:center;padding:9px;background:var(--s2);border-radius:var(--r2)"><div style="font-size:1.3rem;font-weight:800;color:var(--em)">${s.cleanPct||0}%</div><div class="fs0 cm">🚗 Clean</div></div>
+    <div style="text-align:center;padding:9px;background:var(--s2);border-radius:var(--r2)"><div style="font-size:1.3rem;font-weight:800;color:var(--ind)">${s.safePct||0}%</div><div class="fs0 cm">🛡️ Safe</div></div>`;
+
+  // reviews
+  const wc=ratings.filter(r=>r.comment).slice(-6).reverse();
+  document.getElementById('reviewsList').innerHTML=wc.length?wc.map(r=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--b0)">
+      <div class="fb mb2">
+        <div class="fc g2u">
+          <div class="uca" style="width:26px;height:26px;font-size:0.58rem;background:${gradFor(r.rater?.id||0)}">${ini(r.rater?.name||'?')}</div>
+          <div><div class="fs1 fw6">${r.rater?.name||'Anonymous'}</div><div class="fs0 cm">→ rated ${r.ratedUser?.name||'—'} <span style="color:var(--ind)">#${r.ratedUser?.id||''}</span></div></div>
+        </div>
+        ${stars(r.rating,'0.78rem')}
+      </div>
+      ${r.comment?`<p style="font-size:0.81rem;color:var(--t2);font-style:italic;line-height:1.5">"${r.comment}"</p>`:''}
+      <div class="fc g1 mt2">
+        ${r.punctual?'<span class="chip fs0">⏰ Punctual</span>':''}
+        ${r.cleanVehicle?'<span class="chip fs0">🚗 Clean</span>':''}
+        ${r.safeDriver?'<span class="chip fs0">🛡️ Safe</span>':''}
+        <span style="margin-left:auto;font-size:0.68rem;color:var(--t3)">Ride #${r.ride?.id||'?'}</span>
+      </div>
+    </div>`).join(''):`<div class="empty" style="padding:24px"><div class="ei"><i class="fa-regular fa-comments"></i></div><p class="cm fs1">No comments yet</p></div>`;
+
+  // table
+  document.getElementById('ratTbody').innerHTML=ratings.length?ratings.slice().reverse().map(r=>`<tr>
+    <td style="font-size:0.7rem;color:var(--t3)">#${r.id}</td>
+    <td><div class="fs1 fw6">${r.rater?.name||'—'}</div><div class="fs0 cm">#${r.rater?.id||'?'}</div></td>
+    <td><div class="fs1 fw6">${r.ratedUser?.name||'—'}</div><div class="fs0 cm">#${r.ratedUser?.id||'?'}</div></td>
+    <td><span style="font-family:monospace;font-size:0.72rem;color:var(--ind)">#${r.ride?.id||'?'}</span></td>
+    <td>${stars(r.rating,'0.62rem')}</td>
+    <td class="fs0">${r.punctual?'⏰ ':''} ${r.cleanVehicle?'🚗 ':''} ${r.safeDriver?'🛡️ ':''}</td>
+    <td style="font-size:0.76rem;color:var(--t2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.comment||'—'}</td>
+  </tr>`).join(''):`<tr><td colspan="7"><div class="empty"><div class="ei"><i class="fa-solid fa-star-slash"></i></div><h3>No ratings yet</h3></div></td></tr>`;
+}
+loadRatings();
+</script>
+</body>
+</html>

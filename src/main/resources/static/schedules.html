@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — Schedules</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>Route Schedules</h1><p>Set up recurring daily rides — template once, pool automatically every weekday.</p></div>
+      <div class="ph-actions">
+        <button class="btn btn-pri" onclick="openModal('addSchedMod')"><i class="fa-solid fa-plus"></i> New Schedule</button>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,0.07),rgba(52,211,153,0.04));border:1px solid rgba(99,102,241,0.2);border-radius:var(--r);padding:14px 16px">
+      <div class="fw7 mb2" style="font-size:0.86rem"><i class="fa-solid fa-lightbulb" style="color:var(--amb)"></i> How it works</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="fc g2u"><div style="width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,0.15);color:var(--ind);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.78rem;flex-shrink:0">1</div><div style="font-size:0.78rem;color:var(--t2)">Create a recurring schedule for your daily commute route and time</div></div>
+        <div class="fc g2u"><div style="width:26px;height:26px;border-radius:50%;background:rgba(52,211,153,0.15);color:var(--em);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.78rem;flex-shrink:0">2</div><div style="font-size:0.78rem;color:var(--t2)">Click "Generate Today" to instantly post today's ride from your template</div></div>
+        <div class="fc g2u"><div style="width:26px;height:26px;border-radius:50%;background:rgba(251,191,36,0.15);color:var(--amb);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.78rem;flex-shrink:0">3</div><div style="font-size:0.78rem;color:var(--t2)">Runs automatically at 6AM daily — zero effort pooling!</div></div>
+      </div>
+    </div>
+
+    <!-- FILTER BY USER -->
+    <div class="card">
+      <div class="cb">
+        <div class="fg" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
+          <div class="fgr">
+            <label class="flb"><i class="fa-solid fa-user" style="color:var(--ind)"></i> Filter by driver</label>
+            <select id="schedUid" class="fsel" onchange="loadByUser()"><option value="">Loading users...</option></select>
+          </div>
+          <button class="btn btn-sec" onclick="loadAll()"><i class="fa-solid fa-globe"></i> All Schedules</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="schedGrid">
+      <div class="card"><div class="cb"><div class="empty">
+        <div class="ei" style="color:var(--ind)"><i class="fa-solid fa-calendar-days"></i></div>
+        <h3>No schedules yet</h3>
+        <p>Create your first recurring route above</p>
+        <button class="btn btn-pri btn-sm mt3" onclick="openModal('addSchedMod')">+ Create Schedule</button>
+      </div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SCHEDULE MODAL -->
+<div class="ov" id="addSchedMod">
+  <div class="modal">
+    <div class="mh">
+      <h3><i class="fa-solid fa-calendar-plus" style="color:var(--ind)"></i> Create Route Schedule</h3>
+      <button class="mcl" onclick="closeModal('addSchedMod')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="fg">
+      <div class="fgr"><label class="flb">Your Profile (Driver) *</label><select id="sc_uid" class="fsel"><option value="">Loading...</option></select></div>
+      <div class="fgr"><label class="flb">Departure Time *</label><input id="sc_time" class="fi" type="time"></div>
+      <div class="fgr"><label class="flb">From *</label><input id="sc_src" class="fi" placeholder="Pickup location"></div>
+      <div class="fgr"><label class="flb">To *</label><input id="sc_dst" class="fi" placeholder="Drop location"></div>
+      <div class="fgr"><label class="flb">Seats</label><input id="sc_seats" class="fi" type="number" min="1" max="7" value="2"></div>
+      <div class="fgr"><label class="flb">Price/Seat (₹)</label><input id="sc_price" class="fi" type="number" placeholder="e.g. 100"></div>
+      <div class="fgr"><label class="flb">Vehicle Type</label>
+        <select id="sc_vtype" class="fsel"><option value="">Select...</option><option>Sedan</option><option>SUV</option><option>Hatchback</option><option>EV</option></select>
+      </div>
+    </div>
+    <div class="fgr mt3">
+      <label class="flb">Days of Week *</label>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap" id="dayPicker">
+        ${['MON','TUE','WED','THU','FRI','SAT','SUN'].map(d=>`
+          <div class="day-tag on" id="dp-${d}" onclick="toggleDay('${d}',this)" style="cursor:pointer;padding:4px 10px;border-radius:6px">${d}</div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-gh" onclick="closeModal('addSchedMod')">Cancel</button>
+      <button class="btn btn-pri" onclick="createSched()"><i class="fa-solid fa-check"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML = sidebar('schedules.html');
+document.getElementById('tb').innerHTML = topbar('Schedules');
+
+// Default weekdays selected
+const selDays = new Set(['MON','TUE','WED','THU','FRI']);
+['SAT','SUN'].forEach(d => {
+  const el = document.getElementById('dp-'+d);
+  if(el){ el.classList.remove('on'); el.classList.add('off'); }
+});
+
+function toggleDay(d, el){
+  if(selDays.has(d)){ selDays.delete(d); el.className='day-tag off'; el.style.cssText='cursor:pointer;padding:4px 10px;border-radius:6px'; }
+  else { selDays.add(d); el.className='day-tag on'; el.style.cssText='cursor:pointer;padding:4px 10px;border-radius:6px'; }
+}
+
+function renderScheds(scheds){
+  const g = document.getElementById('schedGrid');
+  if(!scheds.length){
+    g.innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei"><i class="fa-solid fa-calendar-xmark"></i></div><h3>No schedules found</h3><button class="btn btn-pri btn-sm mt3" onclick="openModal('addSchedMod')">+ Create Schedule</button></div></div></div>`;
+    return;
+  }
+  const allDays=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  g.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:11px">
+    ${scheds.map(s=>{
+      const activeDays=new Set((s.daysOfWeek||'').split(','));
+      return `<div class="sc-card ${s.isActive?'on':''}">
+        <div class="fb mb2">
+          <div class="rc-route" style="flex:1">
+            <div class="rc-loc"><div class="dot-a"></div><span class="fw6" style="font-size:0.84rem">${s.sourceLocation||'—'}</span></div>
+            <div class="rc-line"></div>
+            <div class="rc-loc"><div class="dot-b"></div><span class="fw6" style="font-size:0.84rem">${s.destinationLocation||'—'}</span></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:1.05rem;font-weight:800;color:var(--ind)">${s.departureTime||'—'}</div>
+            <div style="font-size:0.64rem;color:var(--t3)">daily</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">
+          ${allDays.map(d=>`<span class="${activeDays.has(d)?'day-tag on':'day-tag off'}">${d}</span>`).join('')}
+        </div>
+        <div class="fc g2u mb2" style="flex-wrap:wrap">
+          <span class="chip fs0"><i class="fa-solid fa-user-group"></i> ${s.seats||'?'} seats</span>
+          ${s.pricePerSeat?`<span class="chip fs0 ce">${fM(s.pricePerSeat)}/seat</span>`:''}
+          ${s.vehicleType?`<span class="chip fs0">${s.vehicleType}</span>`:''}
+          <span class="chip fs0"><i class="fa-solid fa-rotate"></i> ${s.totalRidesGenerated||0} generated</span>
+          <span style="margin-left:auto"><span class="badge ${s.isActive?'b-c':'b-x'}">${s.isActive?'Active':'Paused'}</span></span>
+        </div>
+        <div class="fc g2u">
+          <button class="btn btn-em btn-sm" onclick="generate(${s.id})"><i class="fa-solid fa-calendar-plus"></i> Generate Today</button>
+          <button class="btn btn-sec btn-sm" onclick="toggleSched(${s.id})">${s.isActive?'<i class="fa-solid fa-pause"></i> Pause':'<i class="fa-solid fa-play"></i> Resume'}</button>
+          <button class="btn btn-gh btn-sm" style="margin-left:auto;color:var(--rose)" onclick="delSched(${s.id})"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function loadAll(){
+  document.getElementById('schedUid').value='';
+  const scheds = await pubFetch('/schedule/all').catch(()=>[]);
+  renderScheds(scheds);
+}
+async function loadByUser(){
+  const uid = document.getElementById('schedUid').value;
+  if(!uid){ loadAll(); return; }
+  const scheds = await pubFetch('/schedule/user/'+uid).catch(()=>[]);
+  renderScheds(scheds);
+}
+
+function createSched(){
+  const uid=document.getElementById('sc_uid').value;
+  const src=document.getElementById('sc_src').value.trim();
+  const dst=document.getElementById('sc_dst').value.trim();
+  const time=document.getElementById('sc_time').value;
+  const days=[...selDays].join(',');
+  if(!uid||!src||!dst||!time||!days){ toast('Fill all required fields and select at least one day','err'); return; }
+  apiFetch('/schedule/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    user:{id:parseInt(uid)}, sourceLocation:src, destinationLocation:dst,
+    departureTime:time, daysOfWeek:days,
+    seats:parseInt(document.getElementById('sc_seats').value)||2,
+    pricePerSeat:parseFloat(document.getElementById('sc_price').value)||null,
+    vehicleType:document.getElementById('sc_vtype').value||null
+  })}).then(r=>r.json()).then(()=>{ toast('Schedule created!'); closeModal('addSchedMod'); loadAll(); })
+     .catch(()=>toast('Creation failed','err'));
+}
+
+function generate(id){
+  apiFetch('/schedule/'+id+'/generate',{method:'POST'}).then(r=>{if(!r.ok)throw new Error();return r.json();})
+    .then(j=>{ const ride=j.data||j; toast(`Ride #${ride.id} generated for today! ${ride.sourceLocation}→${ride.destinationLocation}`,'ok'); loadAll(); })
+    .catch(()=>toast('Generation failed — ensure ride not already created today','err'));
+}
+function toggleSched(id){
+  apiFetch('/schedule/'+id+'/toggle',{method:'PUT'}).then(()=>{ toast('Schedule updated'); loadAll(); });
+}
+function delSched(id){
+  if(!confirm('Delete this schedule?')) return;
+  apiFetch('/schedule/'+id,{method:'DELETE'}).then(()=>{ toast('Deleted','err'); loadAll(); });
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await populateUserSelect('sc_uid','— Select driver profile —','');
+  await populateUserSelect('schedUid','— Filter by user —','');
+  loadAll();
+});
+</script>
+</body>
+</html>

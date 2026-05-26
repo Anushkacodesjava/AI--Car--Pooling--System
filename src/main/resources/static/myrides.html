@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoolAI — My Rides</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="mesh"></div>
+<div id="sb"></div>
+<div class="main">
+  <div id="tb"></div>
+  <div class="page">
+    <div class="ph">
+      <div><h1>My Rides 🚗</h1><p>Rides you've offered as a driver — manage, update status, see passengers.</p></div>
+      <div class="ph-actions"><a href="offer.html" class="btn btn-em"><i class="fa-solid fa-plus"></i> Offer New Ride</a></div>
+    </div>
+
+    <!-- DRIVER SELECT -->
+    <div class="card" style="background:linear-gradient(135deg,rgba(52,211,153,0.06),rgba(16,185,129,0.03));border-color:rgba(52,211,153,0.2)">
+      <div class="cb">
+        <div class="fb" style="gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <label class="flb mb2" style="display:block"><i class="fa-solid fa-car" style="color:var(--em)"></i> Select Your Driver Profile</label>
+            <select id="driverSel" class="fsel"><option value="">Loading drivers...</option></select>
+          </div>
+          <button class="btn btn-em" onclick="loadMyRides()" style="align-self:flex-end;padding:8px 20px"><i class="fa-solid fa-search"></i> Load My Rides</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="myRidesCont">
+      <div class="card"><div class="cb"><div class="empty">
+        <div class="ei" style="color:var(--em)"><i class="fa-solid fa-car"></i></div>
+        <h3>Select your driver profile</h3>
+        <p>Choose your profile to see all rides you've offered</p>
+      </div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS UPDATE MODAL -->
+<div class="ov" id="stMod">
+  <div class="modal" style="max-width:360px">
+    <div class="mh"><h3><i class="fa-solid fa-circle-dot" style="color:var(--ind)"></i> Update Ride Status</h3><button class="mcl" onclick="closeModal('stMod')"><i class="fa-solid fa-xmark"></i></button></div>
+    <input type="hidden" id="stId">
+    <div class="fgr mb3"><label class="flb">Ride</label><div id="stLabel" style="padding:8px 11px;background:var(--s3);border-radius:var(--r2);font-size:0.83rem;font-weight:600;color:var(--ind)">—</div></div>
+    <div class="fgr"><label class="flb">New Status</label>
+      <select id="stVal" class="fsel">
+        <option value="PENDING">🟡 Pending</option><option value="ACCEPTED">🔵 Accepted</option>
+        <option value="ONGOING">🟣 Ongoing</option><option value="COMPLETED">🟢 Completed</option><option value="CANCELLED">🔴 Cancelled</option>
+      </select>
+    </div>
+    <div class="mf"><button class="btn btn-gh" onclick="closeModal('stMod')">Cancel</button><button class="btn btn-pri" onclick="applyStatus()"><i class="fa-solid fa-check"></i> Update</button></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.getElementById('sb').innerHTML=sidebar('myrides.html');
+document.getElementById('tb').innerHTML=topbar('My Rides');
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await populateUserSelect('driverSel','— Select your driver profile —','');
+  // Auto-select logged-in user and load their rides
+  const me = getUser();
+  if(me && me.id){
+    setTimeout(()=>{
+      const sel = document.getElementById('driverSel');
+      if(sel && sel.options.length > 1){
+        sel.value = me.id;
+        if(sel.value) loadMyRides();
+      }
+    }, 1000);
+  }
+});
+
+async function loadMyRides(){
+  const uid=document.getElementById('driverSel').value;
+  if(!uid){toast('Please select your driver profile','err');return;}
+  document.getElementById('myRidesCont').innerHTML=`<div class="card"><div class="cb" style="text-align:center;padding:40px"><div class="spin" style="margin:auto 0 12px"></div><p class="cm fs1">Loading your rides...</p></div></div>`;
+  const rides=await apiFetch(`/ride/user/${uid}`).then(r=>r.json()).then(j=>j.data??j).catch(()=>[]);
+  const c=document.getElementById('myRidesCont');
+  if(!rides.length){c.innerHTML=`<div class="card"><div class="cb"><div class="empty"><div class="ei" style="color:var(--em)"><i class="fa-solid fa-road"></i></div><h3>No rides offered yet</h3><p>Start by posting your first ride</p><a href="offer.html" class="btn btn-em btn-sm mt3">Offer a Ride</a></div></div></div>`;return;}
+  const earned=rides.filter(r=>r.status==='COMPLETED').length;
+  c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+      <div class="sc"><div class="sc-ic" style="background:rgba(52,211,153,0.12);color:var(--em)"><i class="fa-solid fa-route"></i></div><div class="sc-v">${rides.length}</div><div class="sc-l">Total Rides</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(251,146,60,0.12);color:var(--ora)"><i class="fa-solid fa-clock"></i></div><div class="sc-v">${rides.filter(r=>r.status==='PENDING').length}</div><div class="sc-l">Pending</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(129,140,248,0.12);color:var(--ind)"><i class="fa-solid fa-circle-check"></i></div><div class="sc-v">${earned}</div><div class="sc-l">Completed</div></div>
+      <div class="sc"><div class="sc-ic" style="background:rgba(56,189,248,0.12);color:var(--sky)"><i class="fa-solid fa-user-group"></i></div><div class="sc-v">${rides.reduce((s,r)=>s+(r.maxSeats||0)-(r.availableSeats||0),0)}</div><div class="sc-l">Seats Filled</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">
+      ${rides.map(r=>`
+        <div class="rc">
+          <div class="fb mb2">
+            <span style="background:var(--s3);border:1px solid var(--b1);padding:2px 8px;border-radius:6px;font-family:monospace;font-size:0.74rem;font-weight:700;color:var(--em)">Ride #${r.id}</span>
+            ${sbadge(r.status)}
+          </div>
+          <div class="rc-route">
+            <div class="rc-loc"><div class="dot-a"></div><span class="fw6">${r.sourceLocation||'—'}</span></div>
+            <div class="rc-line"></div>
+            <div class="rc-loc"><div class="dot-b"></div><span class="fw6">${r.destinationLocation||'—'}</span></div>
+          </div>
+          <div class="rc-meta mt2">
+            <span class="mt"><i class="fa-regular fa-calendar"></i>${r.rideDate||'—'}</span>
+            <span class="mt"><i class="fa-regular fa-clock"></i>${fT(r.rideTime)}</span>
+            <span class="mt"><i class="fa-solid fa-chair"></i>${r.availableSeats??0}/${r.maxSeats??4} free</span>
+            ${r.pricePerSeat?`<span class="mt ce fw7">${fM(r.pricePerSeat)}/seat</span>`:''}
+          </div>
+          ${r.notes?`<div class="fs0 cm mt2" style="font-style:italic">"${r.notes}"</div>`:''}
+          <div class="rc-acts mt2">
+            <button class="btn btn-sec btn-sm" onclick="openSt(${r.id},'${r.status}','${r.sourceLocation||''}→${r.destinationLocation||''}')"><i class="fa-solid fa-circle-dot" style="color:var(--ind)"></i> Status</button>
+            <button class="btn btn-sec btn-sm" onclick="viewPassengers(${r.id})"><i class="fa-solid fa-users"></i> Passengers</button>
+            <button class="btn btn-rose btn-sm" style="margin-left:auto" onclick="delRide(${r.id})"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function openSt(id,cur,route){document.getElementById('stId').value=id;document.getElementById('stLabel').textContent='#'+id+' · '+route;document.getElementById('stVal').value=cur;openModal('stMod');}
+function applyStatus(){
+  const id=document.getElementById('stId').value,s=document.getElementById('stVal').value;
+  apiFetch(`/ride/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:s})})
+    .then(r=>r.json()).then(j=>j.data??j).then(()=>{toast('Status updated to '+s);closeModal('stMod');loadMyRides();});
+}
+async function viewPassengers(rideId){
+  const parts=await apiFetch(`/participation/ride/${rideId}`).then(r=>r.json()).then(j=>j.data??j).catch(()=>[]);
+  const mod=document.createElement('div');mod.className='ov open';
+  mod.innerHTML=`<div class="modal"><div class="mh"><h3><i class="fa-solid fa-users" style="color:var(--ind)"></i> Passengers — Ride #${rideId}</h3><button class="mcl" onclick="this.closest('.ov').remove()"><i class="fa-solid fa-xmark"></i></button></div>
+    ${parts.length?parts.map(p=>`
+      <div class="uc mb2">
+        <div class="uca" style="background:${gradFor(p.user?.id||0)}">${ini(p.user?.name||'Guest')}</div>
+        <div class="uc-info">
+          <div class="uc-name">${p.user?.name||'—'} <span class="fs0" style="color:var(--ind)">#${p.user?.id||''}</span></div>
+          <div class="uc-det">${p.user?.phone||p.user?.email||''}</div>
+          <div class="uc-tags"><span class="chip fs0">${p.seatsBooked||1} seat(s)</span>${sbadge(p.status)}</div>
+        </div>
+        ${p.user?.phone?`<a href="tel:${p.user.phone}" class="btn btn-em btn-xs"><i class="fa-solid fa-phone"></i></a>`:''}
+      </div>`).join(''):`<div class="empty" style="padding:30px"><div class="ei"><i class="fa-solid fa-users-slash"></i></div><h3>No passengers yet</h3><p>Share your Ride ID #${rideId} so passengers can book!</p></div>`}
+    <div class="mf"><button class="btn btn-pri" onclick="this.closest('.ov').remove()">Close</button></div>
+  </div>`;
+  document.body.appendChild(mod);
+}
+function delRide(id){if(!confirm('Delete ride #'+id+'?'))return;apiFetch(`/ride/${id}`,{method:'DELETE'}).then(()=>{toast('Ride deleted','err');loadMyRides();});}
+</script>
+</body>
+</html>
