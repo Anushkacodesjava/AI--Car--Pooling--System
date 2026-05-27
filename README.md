@@ -108,6 +108,8 @@ src/
 
 ---
 
+| Mini Project Report | [View Report](./AI_CarPooling_Report.pdf) |
+
 ## 👩‍💻 Developed by
 
 Anushka Shrivastava — Mini Project, 2026
